@@ -1,0 +1,82 @@
+{
+  "version": 4,
+  "targets": {
+    "netstandard2.1": {}
+  },
+  "libraries": {},
+  "projectFileDependencyGroups": {
+    "netstandard2.1": []
+  },
+  "packageFolders": {
+    "C:\\Users\\aaron.aarons-pc\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+  },
+  "project": {
+    "version": "1.2.0",
+    "restore": {
+      "projectUniqueName": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape from duckov Controller support\\dist\\backups\\before-aim-and-device-upgrade-20260908-162056\\source\\DuckovPad.csproj",
+      "projectName": "DuckovPad",
+      "projectPath": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape from duckov Controller support\\dist\\backups\\before-aim-and-device-upgrade-20260908-162056\\source\\DuckovPad.csproj",
+      "packagesPath": "C:\\Users\\aaron.aarons-pc\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape from duckov Controller support\\dist\\backups\\before-aim-and-device-upgrade-20260908-162056\\source\\obj\\",
+      "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
+      "configFilePaths": [
+        "C:\\Users\\aaron.aarons-pc\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "netstandard2.1"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "framework": "netstandard2.1",
+          "targetAlias": "netstandard2.1",
+          "projectReferences": {}
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "10.0.300"
+    },
+    "frameworks": {
+      "netstandard2.1": {
+        "framework": "netstandard2.1",
+        "targetAlias": "netstandard2.1",
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "NETStandard.Library": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301\\RuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "Enabled": true,
+  "ToggleKey": "F5",
+
+  "//": "Most of these can be changed in game: Options -> Controller. Values you set there win over this file. Button bindings are only editable here.",
+
+  "Aim": {
+    "Mode": "easy",
+    "Deadzone": 0.13,
+    "OuterDeadzone": 0.92,
+    "ResponseCurve": 1.35,
+    "TurnResponse": 26.0,
+    "MaxTurnSpeed": 1000.0,
+    "PrecisionRange": 0.72,
+    "AdsPrecision": 0.6,
+    "Reach": 0.82,
+    "AdsReachMultiplier": 1.15,
+    "PreserveRecoil": true,
+    "PointerSensitivity": 1.0,
+    "MixedPointer": 0,
+    "RelativeSensitivity": 260.0,
+    "RelativeAdsMultiplier": 0.55
+  },
+
+  "AimAssist": {
+    "Enabled": true,
+    "Strength": 0.75,
+    "Friction": 0.6,
+    "MagnetDegreesPerSecond": 60.0,
+    "MaxPullDegrees": 11.0,
+    "MaxAngleDegrees": 20.0,
+    "MaxDistance": 34.0,
+    "RequireLineOfSight": true,
+    "StickinessDegrees": 8.0,
+    "OnlyWhileFiringOrAds": false,
+    "FlickDegreesPerSecond": 420.0,
+    "ReleaseDegreesPerSecond": 110.0,
+    "DepthPull": 0.4
+  },
+
+  "AimSnap": {
+    "Enabled": true,
+    "Mode": "toggle",
+    "MaxAngleDegrees": 70.0,
+    "MaxDistance": 40.0,
+    "RequireLineOfSight": true,
+    "SnapOnFire": false,
+    "BreakOnStickInput": true,
+    "BreakAngleDegrees": 75.0,
+    "SwitchTargetOnFlick": true,
+    "EngageTime": 0.13,
+    "ReleaseTime": 0.2,
+    "LeadDegrees": 12.0,
+    "ShowMarker": true,
+    "ShowOutline": true,
+    "OutlineColor": "#FFFFFF",
+    "OutlineWidth": 1.0
+  },
+
+  "Move": {
+    "Deadzone": 0.18,
+    "OuterDeadzone": 0.95,
+    "ResponseCurve": 1.0,
+    "AutoRunAtFullStick": true,
+    "AutoRunThreshold": 0.92
+  },
+
+  "Cursor": {
+    "Speed": 1500.0,
+    "ResponseCurve": 2.0,
+    "Deadzone": 0.18,
+    "PrecisionMultiplier": 0.35,
+    "ScrollSpeed": 12.0,
+    "ScrollUnitsPerNotch": 120.0,
+    "ScaleWithResolution": true
+  },
+
+  "UiSnap": {
+    "StickNavigation": true,
+    "HideCursor": true,
+    "DirectionalSnap": true,
+    "Magnetism": true,
+    "MagnetStrength": 0.35,
+    "MagnetRadius": 46.0,
+    "HighlightTarget": true,
+    "SnapConeDegrees": 65.0,
+    "RescanInterval": 0.25
+  },
+
+  "Hints": {
+    "Enabled": true,
+    "Scale": 1.0,
+    "BottomMargin": 28.0,
+    "PlayStationLabels": false
+  },
+
+  "Rumble": {
+    "Enabled": true,
+    "Scale": 1.0,
+    "ShootLow": 0.16,
+    "ShootHigh": 0.32,
+    "ShootDuration": 0.07,
+    "HurtLow": 0.55,
+    "HurtHigh": 0.45,
+    "HurtDuration": 0.22
+  },
+
+  "Debug": {
+    "ShowOverlay": false
+  },
+
+  "Buttons": {
+    "Modifier": "LB",
+
+    "Fire": "RT",
+    "Ads": "LT",
+    "Sprint": "L3",
+    "Dash": "B",
+    "Reload": "X",
+    "Interact": "A",
+    "PutAway": "LB+A",
+    "SwitchWeapon": "Y",
+    "MeleeWeapon": "LB+Y",
+    "CharacterSkill": "RB",
+    "LockOn": "R3",
+    "NightVision": "LB+L3",
+    "ToggleView": "LB+R3",
+    "Quack": "LB+B",
+    "StopAction": "LB+X",
+    "PadMenu": "LB+RB+Start",
+
+    "Inventory": "Start",
+    "Map": "Select",
+    "PauseMenu": "LB+Start",
+    "QuestLog": "LB+Select",
+
+    "CycleNext": "DpadUp",
+    "CyclePrevious": "DpadDown",
+    "ShortcutPrevious": "DpadLeft",
+    "ShortcutNext": "DpadRight",
+
+    "QuickItem3": "LB+DpadUp",
+    "QuickItem4": "LB+DpadRight",
+    "QuickItem5": "LB+DpadDown",
+    "QuickItem6": "LB+DpadLeft",
+
+    "UiClick": "A",
+    "UiContext": "X",
+    "UiBack": "B",
+    "UiQuickMove": "Y",
+    "UiLockSort": "L3",
+    "UiDrop": "",
+    "UiUse": "",
+    "UiMark": "",
+    "UiDragModifier": "",
+    "UiPrecision": "LT",
+    "UiPageNext": "RB",
+    "UiPagePrevious": "LB",
+    "UiRotate": "LB",
+    "UiClose": "Start",
+
+    "UiNavUp": "DpadUp",
+    "UiNavDown": "DpadDown",
+    "UiNavLeft": "DpadLeft",
+    "UiNavRight": "DpadRight"
+  }
+}

@@ -1,0 +1,10 @@
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\obj\Release\DuckovPad.csproj.AssemblyReference.cache
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\obj\Release\DuckovPad.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\obj\Release\DuckovPad.AssemblyInfoInputs.cache
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\obj\Release\DuckovPad.AssemblyInfo.cs
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\obj\Release\DuckovPad.csproj.CoreCompileInputs.cache
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\bin\Release\DuckovPad.deps.json
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\bin\Release\DuckovPad.dll
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\bin\Release\DuckovPad.pdb
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\obj\Release\DuckovPad.dll
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\obj\Release\DuckovPad.pdb

@@ -1,0 +1,14 @@
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\bin\Release\net10.0\ControllerChecks.exe
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\bin\Release\net10.0\ControllerChecks.deps.json
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\bin\Release\net10.0\ControllerChecks.runtimeconfig.json
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\bin\Release\net10.0\ControllerChecks.dll
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\bin\Release\net10.0\ControllerChecks.pdb
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\ControllerChecks.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\ControllerChecks.AssemblyInfoInputs.cache
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\ControllerChecks.AssemblyInfo.cs
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\ControllerChecks.csproj.CoreCompileInputs.cache
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\ControllerChecks.dll
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\refint\ControllerChecks.dll
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\ControllerChecks.pdb
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\ControllerChecks.genruntimeconfig.cache
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\ref\ControllerChecks.dll
