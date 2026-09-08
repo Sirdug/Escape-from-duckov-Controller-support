@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DuckovPad")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.2.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.2.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.2.0+2e9eae064e24f56636306199d4b89e8076764ed3")]
 [assembly: System.Reflection.AssemblyProductAttribute("DuckovPad")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DuckovPad")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.2.0.0")]
