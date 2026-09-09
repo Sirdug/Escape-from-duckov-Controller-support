@@ -75,8 +75,10 @@ namespace DuckovPad
             new PadBinding { Section = "In menus", Field = "UiUse", Label = "Use focused item" },
             new PadBinding { Section = "In menus", Field = "UiMark", Label = "Wishlist mark focused item" },
             new PadBinding { Section = "In menus", Field = "UiPrecision", Label = "Precision cursor (hold)" },
-            new PadBinding { Section = "In menus", Field = "UiPageNext", Label = "Next page" },
-            new PadBinding { Section = "In menus", Field = "UiPagePrevious", Label = "Previous page" },
+            new PadBinding { Section = "In menus", Field = "UiPageNext", Label = "Next menu tab" },
+            new PadBinding { Section = "In menus", Field = "UiPagePrevious", Label = "Previous menu tab" },
+            new PadBinding { Section = "In menus", Field = "UiStashPrevious", Label = "Previous stash page" },
+            new PadBinding { Section = "In menus", Field = "UiStashNext", Label = "Next stash page" },
             new PadBinding { Section = "In menus", Field = "UiClose", Label = "Close view" },
             new PadBinding { Section = "In menus", Field = "UiRotate", Label = "Rotate (build mode)" },
 
@@ -106,7 +108,7 @@ namespace DuckovPad
 
         /// <summary>
         /// Assign a binding: clear the same chord anywhere else so two actions can never
-        /// share one button, persist, and re-resolve the pad tables.
+        /// share one button within the same gameplay/menu context, persist, and re-resolve the pad tables.
         /// </summary>
         public static void Set(PadConfig config, PadBinding binding, string value)
         {
@@ -127,6 +129,7 @@ namespace DuckovPad
             foreach (var other in All)
             {
                 if (other.IsReset || string.Equals(other.Field, exceptField, StringComparison.Ordinal)) continue;
+                if (other.Field.StartsWith("Ui", StringComparison.Ordinal) != exceptField.StartsWith("Ui", StringComparison.Ordinal)) continue;
                 var field = FieldFor(other.Field);
                 if (field == null) continue;
                 var current = field.GetValue(config.Buttons) as string;
@@ -174,6 +177,12 @@ namespace DuckovPad
                 {
                     Log.Warn("Could not load binding " + binding.Field + ": " + e.Message);
                 }
+            }
+            // Migrate the former default after loading saved options as well as JSON.
+            if (config.Buttons.UiPrecision == "LT" && config.Buttons.UiStashPrevious == "LT")
+            {
+                config.Buttons.UiPrecision = "L3";
+                OptionsManager.Save(Prefix + "UiPrecision", "L3");
             }
         }
 

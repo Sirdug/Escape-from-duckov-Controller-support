@@ -217,12 +217,15 @@ namespace DuckovPad
 
             if (_lockWeight > 0.0001f)
             {
-                float blend = AimMath.Ease(_lockWeight);
-                angle = freeAngle + AimMath.DeltaAngle(freeAngle, _lockAngle + lead) * blend;
+                // Lock strength scales the pin: 1 fully locks the cursor/aim marker onto
+                // the target, lower loosens toward assist-like help while still showing
+                // the marker + outline. 0 leaves aim free (target only indicated).
+                float pin = AimMath.Ease(_lockWeight) * Mathf.Clamp01(_config.AimSnap.Strength);
+                angle = freeAngle + AimMath.DeltaAngle(freeAngle, _lockAngle + lead) * pin;
 
                 // No upper cap: the crosshair should end up sitting on the enemy, however far
                 // out it is. FitRadius below is what keeps it inside the window.
-                radius = Mathf.Lerp(radius, Mathf.Max(40f, _lockRadius), blend);
+                radius = Mathf.Lerp(radius, Mathf.Max(40f, _lockRadius), pin);
             }
 
             _radiusPx = _radiusPx <= 0f ? radius : Mathf.Lerp(_radiusPx, radius, 1f - Mathf.Exp(-12f * dt));
@@ -656,7 +659,7 @@ namespace DuckovPad
             if (receiver == null) receiver = target.GetComponentInParent<DamageReceiver>();
             if (receiver == null) return false;
 
-            return !receiver.IsDead && Team.IsEnemy(Teams.player, receiver.Team);
+            return !receiver.IsDead && !receiver.isHalfObsticle && Team.IsEnemy(Teams.player, receiver.Team);
         }
 
         private static Vector3 TargetPoint(Transform target)

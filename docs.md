@@ -154,7 +154,7 @@ The README provides the default control map for Xbox naming.
 - Y: quick move / take
 - B: cancel / go back
 - LT: hold for visible precision cursor
-- LB / RB: previous / next page
+- LB / RB: previous / next page or bottom-tab view (menus only; slots via D-pad / stick)
 - LB: rotate in build mode
 - Start: close
 
@@ -280,6 +280,10 @@ In game, under `Options -> Controller -> Troubleshooting -> Diagnostic overlay`,
 - the friction and pull currently applied
 
 This is the first step when aim assist or input issues appear.
+
+### Known issues
+
+- **Bumper slot-cycling can skip some gun slots.** `UiSnap.TryCycleSlot` (`src/DuckovPad/UiSnap.cs`) recognises `InventoryEntry`/`SlotDisplay`/`ItemShortcutEditorEntry`/`WeaponButton` plus raw `ItemDisplay` holders, but some equipment gun UI still isn't classified, so LB/RB can skip guns while the D-pad reaches them. The overlay's `ui focus` line reports `name [bag|equip|shortcut|gun|item|other]` plus the slot count, and the `bumper` line reports the last bumper action (`slot n/m kind`, `no slots in view`, `end of slots, turning page`, `RB/LB: page next/prev`) — collect those before changing the filter again. Workaround: D-pad.
 
 ### Common aim tuning advice from the README
 

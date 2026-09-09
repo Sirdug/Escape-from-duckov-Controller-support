@@ -8,3 +8,4 @@ C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\Duc
 C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\bin\Release\DuckovPad.pdb
 C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\obj\Release\DuckovPad.dll
 C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\obj\Release\DuckovPad.pdb
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\src\DuckovPad\obj\Release\DuckovPad.sourcelink.json

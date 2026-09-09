@@ -12,3 +12,4 @@ C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\C
 C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\ControllerChecks.pdb
 C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\ControllerChecks.genruntimeconfig.cache
 C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\ref\ControllerChecks.dll
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\ControllerChecks\obj\Release\net10.0\ControllerChecks.sourcelink.json

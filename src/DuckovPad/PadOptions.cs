@@ -41,6 +41,28 @@ namespace DuckovPad
 
         private static readonly string[] AimModes = { "Easy directional (recommended)", "Free cursor", "Classic twin-stick" };
         private static readonly string[] LockModes = { "Toggle", "Hold" };
+        private static readonly string[] OutlineColors = { "White", "Yellow", "Cyan", "Red" };
+
+        private static string OutlineHex(int index)
+        {
+            switch (index)
+            {
+                case 1: return "#FFFF00";
+                case 2: return "#00FFFF";
+                case 3: return "#FF4444";
+                default: return "#FFFFFF";
+            }
+        }
+
+        private static int OutlineIndex(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html)) return 0;
+            string h = html.Trim().ToUpperInvariant();
+            if (h == "#FFFF00" || h == "YELLOW") return 1;
+            if (h == "#00FFFF" || h == "CYAN") return 2;
+            if (h == "#FF4444" || h == "RED") return 3;
+            return 0;
+        }
 
         public static readonly List<PadOption> All = new List<PadOption>
         {
@@ -119,7 +141,7 @@ namespace DuckovPad
             new PadOption
             {
                 Section = "Aiming", Key = Prefix + "LookSpeed", Label = "Free cursor look speed", Kind = OptionKind.Slider,
-                Min = 60f, Max = 700f, Format = "0",
+                Min = 60f, Max = 1200f, Format = "0",
                 GetFloat = c => c.Aim.RelativeSensitivity,
                 SetFloat = (c, v) => c.Aim.RelativeSensitivity = v
             },
@@ -133,7 +155,7 @@ namespace DuckovPad
             },
             new PadOption
             {
-                Section = "Aim assist", Key = Prefix + "AssistStrength", Label = "Assist strength", Kind = OptionKind.Slider,
+                Section = "Aim assist", Key = Prefix + "AssistStrength", Label = "Assist pull strength", Kind = OptionKind.Slider,
                 Min = 0f, Max = 1f, Format = "0.00",
                 GetFloat = c => c.AimAssist.Strength,
                 SetFloat = (c, v) => c.AimAssist.Strength = v
@@ -203,9 +225,22 @@ namespace DuckovPad
             },
             new PadOption
             {
+                Section = "Lock-on", Key = Prefix + "LockStrength", Label = "Lock-on strength", Kind = OptionKind.Slider,
+                Min = 0f, Max = 1f, Format = "0.00",
+                GetFloat = c => c.AimSnap.Strength,
+                SetFloat = (c, v) => c.AimSnap.Strength = v
+            },
+            new PadOption
+            {
                 Section = "Lock-on", Key = Prefix + "SnapOnFire", Label = "Snap to enemy when firing", Kind = OptionKind.Toggle,
                 GetBool = c => c.AimSnap.SnapOnFire,
                 SetBool = (c, v) => c.AimSnap.SnapOnFire = v
+            },
+            new PadOption
+            {
+                Section = "Lock-on", Key = Prefix + "SnapOnAim", Label = "Snap to enemy when aiming", Kind = OptionKind.Toggle,
+                GetBool = c => c.AimSnap.SnapOnAim,
+                SetBool = (c, v) => c.AimSnap.SnapOnAim = v
             },
             new PadOption
             {
@@ -230,15 +265,42 @@ namespace DuckovPad
             },
             new PadOption
             {
+                Section = "Lock-on", Key = Prefix + "LockBreak", Label = "Break angle (degrees)", Kind = OptionKind.Slider,
+                Min = 30f, Max = 120f, Format = "0",
+                GetFloat = c => c.AimSnap.BreakAngleDegrees,
+                SetFloat = (c, v) => c.AimSnap.BreakAngleDegrees = v
+            },
+            new PadOption
+            {
                 Section = "Lock-on", Key = Prefix + "LockSwitch", Label = "Flick the stick to change target", Kind = OptionKind.Toggle,
                 GetBool = c => c.AimSnap.SwitchTargetOnFlick,
                 SetBool = (c, v) => c.AimSnap.SwitchTargetOnFlick = v
             },
             new PadOption
             {
+                Section = "Lock-on", Key = Prefix + "LockMarker", Label = "Marker over locked enemy", Kind = OptionKind.Toggle,
+                GetBool = c => c.AimSnap.ShowMarker,
+                SetBool = (c, v) => c.AimSnap.ShowMarker = v
+            },
+            new PadOption
+            {
                 Section = "Lock-on", Key = Prefix + "LockOutline", Label = "Outline the locked enemy", Kind = OptionKind.Toggle,
                 GetBool = c => c.AimSnap.ShowOutline,
                 SetBool = (c, v) => c.AimSnap.ShowOutline = v
+            },
+            new PadOption
+            {
+                Section = "Lock-on", Key = Prefix + "LockOutlineColor", Label = "Outline color", Kind = OptionKind.Choice,
+                Choices = OutlineColors,
+                GetChoice = c => OutlineIndex(c.AimSnap.OutlineColor),
+                SetChoice = (c, i) => c.AimSnap.OutlineColor = OutlineHex(i)
+            },
+            new PadOption
+            {
+                Section = "Lock-on", Key = Prefix + "LockOutlineWidth", Label = "Outline thickness", Kind = OptionKind.Slider,
+                Min = 0f, Max = 1f, Format = "0.00",
+                GetFloat = c => c.AimSnap.OutlineWidth,
+                SetFloat = (c, v) => c.AimSnap.OutlineWidth = v
             },
 
             // ---------------- Movement ----------------
@@ -275,6 +337,25 @@ namespace DuckovPad
                 Min = 400f, Max = 3200f, Format = "0",
                 GetFloat = c => c.Cursor.Speed,
                 SetFloat = (c, v) => c.Cursor.Speed = v
+            },
+            new PadOption
+            {
+                Section = "Menus", Key = Prefix + "MenuDeadzone", Label = "Menu stick deadzone (anti-drift)", Kind = OptionKind.Slider,
+                Min = 0.05f, Max = 0.6f, Format = "0.00",
+                GetFloat = c => c.UiSnap.MenuDeadzone,
+                SetFloat = (c, v) => c.UiSnap.MenuDeadzone = v
+            },
+            new PadOption
+            {
+                Section = "Menus", Key = Prefix + "DpadOnly", Label = "D-pad only (ignore drifting sticks)", Kind = OptionKind.Toggle,
+                GetBool = c => c.UiSnap.DpadOnly,
+                SetBool = (c, v) => c.UiSnap.DpadOnly = v
+            },
+            new PadOption
+            {
+                Section = "Menus", Key = Prefix + "AutoSelectFirst", Label = "Auto-select first item on open", Kind = OptionKind.Toggle,
+                GetBool = c => c.UiSnap.AutoSelectFirst,
+                SetBool = (c, v) => c.UiSnap.AutoSelectFirst = v
             },
             new PadOption
             {

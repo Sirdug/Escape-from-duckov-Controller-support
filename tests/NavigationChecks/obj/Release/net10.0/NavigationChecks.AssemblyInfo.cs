@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NavigationChecks")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1de2d949038f330542c8494772641a3154f2260c")]
 [assembly: System.Reflection.AssemblyProductAttribute("NavigationChecks")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NavigationChecks")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

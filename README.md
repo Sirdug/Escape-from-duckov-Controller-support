@@ -87,6 +87,7 @@ Important:
 | X | Reload |
 | Y | Swap primary / secondary |
 | RB | Character skill (hold to aim, release to use) |
+| LB (tap) | Cycle weapon slots 1 → 2 → 3 (hold LB for the layer below) |
 | D-pad ↑ / ↓ | Mouse-wheel equivalent for ammo / interaction target / weapon scroll |
 | D-pad ← / → | Cycle weapon slots 1 → 2 → 3 |
 | Start | Inventory / stash |
@@ -118,13 +119,17 @@ The prompt bar displays these actions while LB is held, so there is no long memo
 | X | Item actions |
 | Y | Quick move / take |
 | B | Close popup, cancel selection, or go back |
-| LT | Hold for visible precision cursor |
-| LB / RB | Previous / next page |
+| LT / RT | Previous / next stash page (stash only; wraps through available pages) |
+| L3 | Hold for visible precision cursor |
+| LB / RB | Previous / next main menu tab (backpack, stats, quests, map, keys, formulas) |
 | LB | Rotate in build mode |
 | Start | Close |
 
 Notes:
 
+- Solo inventory opens on the first bag slot, including empty slots. Bodies, containers, and stash open on the first slot of the other inventory.
+- Menu and gameplay bindings are independent. Release held buttons after leaving a menu before using them for gameplay.
+- Stash page bindings are remappable under In menus and do nothing on bodies or player records.
 - Grab/place/swap and quick move work from the focused slot while the tooltip is open.
 - `UiUse`, `UiDrop`, and `UiMark` in `Settings.json` can bind direct controller actions to use, drop, and wishlist-mark an item without hover requirements.
 - Any pad button can pass the boot title screen and loading curtain, not just A / Start.

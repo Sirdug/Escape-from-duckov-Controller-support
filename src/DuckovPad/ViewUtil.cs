@@ -14,6 +14,9 @@ namespace DuckovPad
         private static readonly FieldInfo SplitFadeGroup =
             typeof(SplitDialogue).GetField("fadeGroup", BindingFlags.Instance | BindingFlags.NonPublic);
 
+        public static bool StashOpen => View.ActiveView is LootView loot
+            && loot.TargetInventory != null && loot.TargetInventory == PlayerStorage.Inventory;
+
         public static bool SplitDialogueOpen
         {
             get
@@ -55,5 +58,21 @@ namespace DuckovPad
 
         /// <summary>Close whatever view is currently on top, if any.</summary>
         public static void CloseActive() => TryQuit(View.ActiveView);
+
+        /// <summary>Open a view instance (e.g. MasterKeysView, whose static Show is internal).</summary>
+        public static void TryOpen(View view)
+        {
+            if (view == null) return;
+            try
+            {
+                // ManagedUIElement.Open has an optional parent argument. A direct
+                // call supplies that argument; reflection with zero arguments fails.
+                view.Open(null);
+            }
+            catch (Exception e)
+            {
+                Log.Warn("View.Open failed for " + view.GetType().Name + ": " + (e.InnerException ?? e).Message);
+            }
+        }
     }
 }

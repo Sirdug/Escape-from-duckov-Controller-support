@@ -25,6 +25,14 @@ namespace DuckovPad
         private int _weaponSlot = 1;
         private bool _skillAimActive;
         private bool _lockFromTrigger;
+        private bool _lockFromAim;
+        private bool _prevAdsHeld;
+        private bool _waitForPointerRelease;
+        private bool _modifierTapArmed;
+        private float _modifierTapTime;
+
+        /// <summary>Quick lone tap that still counts as a tap, in seconds.</summary>
+        private const float ModifierTapWindow = 0.35f;
 
         public bool AdsHeld { get; private set; }
 
@@ -40,8 +48,12 @@ namespace DuckovPad
 
         public void Reset()
         {
+            _waitForPointerRelease = true;
             _skillAimActive = false;
             _lockFromTrigger = false;
+            _lockFromAim = false;
+            _prevAdsHeld = false;
+            _modifierTapArmed = false;
             AdsHeld = false;
             _aim.Reset();
         }
@@ -61,9 +73,21 @@ namespace DuckovPad
 
             // ---------------- firing (read before aim; assist depends on it) ----------------
             var pointer = ControllerDevice.UsePointer ? UnityEngine.InputSystem.Mouse.current : null;
+            if (_waitForPointerRelease)
+            {
+                if (pointer == null || (!pointer.leftButton.isPressed && !pointer.rightButton.isPressed))
+                    _waitForPointerRelease = false;
+                else pointer = null;
+            }
             bool fireHeld = Pad.Held(buttons.Fire) || (pointer?.leftButton.isPressed ?? false);
             bool fireDown = Pad.Down(buttons.Fire) || (pointer?.leftButton.wasPressedThisFrame ?? false);
             bool fireUp = !fireHeld && (Pad.Up(buttons.Fire) || (pointer?.leftButton.wasReleasedThisFrame ?? false));
+
+            // ADS edges are read up here because the lock-on snap needs them.
+            bool adsHeld = Pad.Held(buttons.Ads) || (pointer?.rightButton.isPressed ?? false);
+            bool adsDown = adsHeld && !_prevAdsHeld;
+            bool adsUp = !adsHeld && _prevAdsHeld;
+            _prevAdsHeld = adsHeld;
 
             // ---------------- lock-on ----------------
             var snap = _config.AimSnap;
@@ -73,7 +97,10 @@ namespace DuckovPad
                 if (hold)
                 {
                     if (Pad.Down(buttons.LockOn) || Pad.Down(buttons.DeckLockOn)) _aim.AcquireLock(character);
-                    if (!Pad.Held(buttons.LockOn) && !Pad.Held(buttons.DeckLockOn)) _aim.ClearLock();
+                    // Auto-snapped locks belong to the trigger/ADS that made them, so a
+                    // released R3 must not instantly clear a snap that is still held.
+                    if (!Pad.Held(buttons.LockOn) && !Pad.Held(buttons.DeckLockOn)
+                        && !_lockFromAim && !_lockFromTrigger) _aim.ClearLock();
                 }
                 else if (Pad.Down(buttons.LockOn) || Pad.Down(buttons.DeckLockOn))
                 {
@@ -92,10 +119,30 @@ namespace DuckovPad
                     _aim.ClearLock();
                     _lockFromTrigger = false;
                 }
+
+                // Same idea for aiming: pressing ADS snaps onto whatever is in front
+                // so the white lock frame shows while aiming, and releasing ADS hands
+                // the lock back. Never steals a manual R3 lock.
+                if (snap.SnapOnAim && adsDown && !_aim.LockedOn)
+                    _lockFromAim = _aim.AcquireLock(character);
+
+                if (_lockFromAim && adsUp)
+                {
+                    _lockFromAim = false;
+                    // Still holding the trigger: hand the lock to it instead of
+                    // dropping the target mid-burst. Otherwise let go with ADS.
+                    if (fireHeld) _lockFromTrigger = true;
+                    else _aim.ClearLock();
+                }
+            }
+            else
+            {
+                _lockFromAim = false;
+                _lockFromTrigger = false;
             }
 
             // ---------------- aim ----------------
-            AdsHeld = Pad.Held(buttons.Ads) || (pointer?.rightButton.isPressed ?? false);
+            AdsHeld = adsHeld;
             inputManager.SetAdsInput(AdsHeld);
             _aim.Update(inputManager, character, AdsHeld, fireHeld, deltaTime);
 
@@ -173,6 +220,11 @@ namespace DuckovPad
             if (Pad.Down(buttons.ShortcutNext)) CycleItemAgent(inputManager, 1);
             if (Pad.Down(buttons.ShortcutPrevious)) CycleItemAgent(inputManager, -1);
 
+            // Lone LB tap cycles held weapons too. A lone tap is otherwise unused in
+            // gameplay — LB only modifies chords while held — so this costs nothing,
+            // while RB keeps the character skill.
+            UpdateModifierTap(inputManager);
+
             // D-pad up/down mirrors the mouse wheel, honouring the player's
             // "scroll wheel behaviour" option just like the vanilla binding does.
             if (Pad.Down(buttons.CycleNext)) Scroll(inputManager, 1);
@@ -196,6 +248,33 @@ namespace DuckovPad
             if (_weaponSlot > 3) _weaponSlot = 1;
             if (_weaponSlot < 1) _weaponSlot = 3;
             inputManager.SwitchItemAgent(_weaponSlot);
+        }
+
+        /// <summary>
+        /// Arm on modifier press; any other button pressed while held means it was a
+        /// chord, not a tap. A quick lone release cycles to the next held weapon.
+        /// </summary>
+        private void UpdateModifierTap(InputManager inputManager)
+        {
+            var modifier = _config.Buttons.Modifier;
+            if (Pad.Down(modifier))
+            {
+                _modifierTapArmed = true;
+                _modifierTapTime = Time.unscaledTime;
+            }
+            if (!_modifierTapArmed) return;
+
+            string lone = Pad.FriendlyName(Pad.CanonicalName(modifier));
+            string press = Pad.CapturePress();
+            if (press != null && !string.Equals(press, lone, StringComparison.OrdinalIgnoreCase))
+                _modifierTapArmed = false;
+
+            if (Pad.Up(modifier))
+            {
+                bool tap = _modifierTapArmed && Time.unscaledTime - _modifierTapTime <= ModifierTapWindow;
+                _modifierTapArmed = false;
+                if (tap) CycleItemAgent(inputManager, 1);
+            }
         }
 
         private static void Scroll(InputManager inputManager, int direction)

@@ -82,8 +82,10 @@ namespace DuckovPad
             /// <summary>0: automatic for Steam Deck / Steam Controller; 1: on; 2: off.</summary>
             public int MixedPointer = 0;
 
-            /// <summary>Degrees/second for "relative" mode.</summary>
-            public float RelativeSensitivity = 260f;
+            /// <summary>Degrees/second for "relative" mode. Still scales with the game's
+            /// own mouse sensitivity (we hand the delta to the vanilla mouse path),
+            /// so this is a base that feels right at default mouse settings.</summary>
+            public float RelativeSensitivity = 480f;
 
             /// <summary>Extra sensitivity multiplier while ADS in relative mode.</summary>
             public float RelativeAdsMultiplier = 0.55f;
@@ -103,14 +105,17 @@ namespace DuckovPad
             /// </summary>
             public float Friction = 0.6f;
 
-            /// <summary>Peak pull toward the target at the centre of the wedge, in degrees/sec.</summary>
-            public float MagnetDegreesPerSecond = 60f;
+            /// <summary>Peak pull toward the target at the centre of the wedge, in degrees/sec.
+            /// Heavy enough to feel like the cursor floats onto an enemy, but a deliberate
+            /// flick still overpowers it (see FlickDegreesPerSecond).</summary>
+            public float MagnetDegreesPerSecond = 130f;
 
             /// <summary>
             /// Hard ceiling on how far the pull may ever bend aim away from the stick.
-            /// Small on purpose: enough to hold a strafing enemy, never enough to aim for you.
+            /// Large enough to track a strafing enemy, small enough that the stick
+            /// always wins when you deliberately push away.
             /// </summary>
-            public float MaxPullDegrees = 11f;
+            public float MaxPullDegrees = 24f;
 
             /// <summary>Only assist targets within this screen angle of the crosshair.</summary>
             public float MaxAngleDegrees = 20f;
@@ -137,13 +142,17 @@ namespace DuckovPad
 
             /// <summary>How strongly the crosshair settles onto the target's own screen
             /// distance, 0..1, so the help is visible. 0 keeps the reach perfectly constant.</summary>
-            public float DepthPull = 0.4f;
+            public float DepthPull = 0.55f;
         }
 
         public class AimSnapSettings
         {
             /// <summary>Hard lock-on: aim tracks a chosen enemy until you break it.</summary>
             public bool Enabled = true;
+
+            /// <summary>How hard the lock pins the cursor/aim marker to the target, 0..1.
+            /// 1 is a full pin (stick only leads slightly); lower loosens toward assist-like help.</summary>
+            public float Strength = 1f;
 
             /// <summary>"toggle" = press to lock, press again to release. "hold" = hold the button.</summary>
             public string Mode = "toggle";
@@ -155,6 +164,10 @@ namespace DuckovPad
 
             /// <summary>Instantly snap onto the best target the moment you pull the trigger.</summary>
             public bool SnapOnFire = false;
+
+            /// <summary>Snap onto the best target the moment you aim (ADS), and release
+            /// when you stop aiming. Same convenience as snap-on-fire, for the aim button.</summary>
+            public bool SnapOnAim = true;
 
             /// <summary>Break the lock by pushing the right stick hard away from the target.</summary>
             public bool BreakOnStickInput = true;
@@ -168,14 +181,15 @@ namespace DuckovPad
 
             /// <summary>Seconds for the crosshair to travel onto a freshly locked target.
             /// 0 snaps, which is what made lock-on feel cheap.</summary>
-            public float EngageTime = 0.13f;
+            public float EngageTime = 0.1f;
 
             /// <summary>Seconds for the crosshair to hand control back when the lock ends.</summary>
             public float ReleaseTime = 0.2f;
 
             /// <summary>How far the stick may slide the crosshair around a locked target, in
-            /// degrees, so moving enemies can still be led.</summary>
-            public float LeadDegrees = 12f;
+            /// degrees, so moving enemies can still be led. Kept small so the lock still
+            /// reads as pinned while allowing deliberate lead.</summary>
+            public float LeadDegrees = 8f;
 
             /// <summary>Draw a marker over the locked target.</summary>
             public bool ShowMarker = true;
@@ -195,6 +209,14 @@ namespace DuckovPad
         {
             public bool StickNavigation = true;
             public bool HideCursor = true;
+
+            /// <summary>Stick deflection below this is treated as drift in menus and ignored.
+            /// Higher = more drift protection, but tiny intentional pushes are ignored too.</summary>
+            public float MenuDeadzone = 0.28f;
+
+            /// <summary>When true, the sticks never move the menu cursor or selection;
+            /// D-pad only. Hard fallback for badly drifting sticks.</summary>
+            public bool DpadOnly = false;
 
             /// <summary>D-pad jumps the cursor between buttons, slots and inventory items.</summary>
             public bool DirectionalSnap = true;
@@ -216,6 +238,10 @@ namespace DuckovPad
 
             /// <summary>How often the list of on-screen elements is rebuilt, in seconds.</summary>
             public float RescanInterval = 0.25f;
+
+            /// <summary>When a loot/inventory view opens, automatically focus its first
+            /// item (loot side for crates/bodies, player side for stash and solo inventory).</summary>
+            public bool AutoSelectFirst = true;
         }
 
         public class HintSettings
@@ -356,7 +382,9 @@ namespace DuckovPad
             /// <summary>Wishlist mark/unmark on the focused item. Same toggle as the N key.</summary>
             public string UiMark = "";
             public string UiDragModifier = "";
-            public string UiPrecision = "LT";
+            public string UiPrecision = "L3";
+            public string UiStashPrevious = "LT";
+            public string UiStashNext = "RT";
             public string UiPageNext = "RB";
             public string UiPagePrevious = "LB";
             public string UiRotate = "LB";
@@ -413,6 +441,14 @@ namespace DuckovPad
                     cfg.Buttons.UiDragModifier = "";
                     upgraded = true;
                 }
+                // Bring forward old feel defaults without clobbering deliberate user tweaks.
+                // Only exact old defaults are moved; anything else is left alone.
+                if (Math.Abs(cfg.Aim.RelativeSensitivity - 260f) < 0.01f) { cfg.Aim.RelativeSensitivity = 480f; upgraded = true; }
+                if (Math.Abs(cfg.AimAssist.MagnetDegreesPerSecond - 60f) < 0.01f) { cfg.AimAssist.MagnetDegreesPerSecond = 130f; upgraded = true; }
+                if (Math.Abs(cfg.AimAssist.MaxPullDegrees - 11f) < 0.01f) { cfg.AimAssist.MaxPullDegrees = 24f; upgraded = true; }
+                if (Math.Abs(cfg.AimAssist.DepthPull - 0.4f) < 0.01f) { cfg.AimAssist.DepthPull = 0.55f; upgraded = true; }
+                if (Math.Abs(cfg.AimSnap.EngageTime - 0.13f) < 0.001f) { cfg.AimSnap.EngageTime = 0.1f; upgraded = true; }
+                if (Math.Abs(cfg.AimSnap.LeadDegrees - 12f) < 0.01f) { cfg.AimSnap.LeadDegrees = 8f; upgraded = true; }
                 cfg.Validate();
                 if (upgraded) cfg.Save(path);
                 return cfg;
@@ -449,6 +485,8 @@ namespace DuckovPad
             Aim.AdsReachMultiplier = Mathf.Clamp(Aim.AdsReachMultiplier, 0.5f, 2f);
             Aim.PointerSensitivity = Mathf.Clamp(Aim.PointerSensitivity, 0.1f, 4f);
             Aim.MixedPointer = Mathf.Clamp(Aim.MixedPointer, 0, 2);
+            Aim.RelativeSensitivity = Mathf.Clamp(Aim.RelativeSensitivity, 60f, 1500f);
+            Aim.RelativeAdsMultiplier = Mathf.Clamp(Aim.RelativeAdsMultiplier, 0.1f, 1f);
 
             AimAssist.Strength = Mathf.Clamp01(AimAssist.Strength);
             AimAssist.Friction = Mathf.Clamp01(AimAssist.Friction);
@@ -461,6 +499,7 @@ namespace DuckovPad
             AimAssist.ReleaseDegreesPerSecond = Mathf.Clamp(AimAssist.ReleaseDegreesPerSecond, 10f, 1000f);
             AimAssist.DepthPull = Mathf.Clamp01(AimAssist.DepthPull);
 
+            AimSnap.Strength = Mathf.Clamp01(AimSnap.Strength);
             AimSnap.MaxAngleDegrees = Mathf.Clamp(AimSnap.MaxAngleDegrees, 5f, 180f);
             AimSnap.MaxDistance = Mathf.Max(1f, AimSnap.MaxDistance);
             AimSnap.BreakAngleDegrees = Mathf.Clamp(AimSnap.BreakAngleDegrees, 15f, 180f);
@@ -470,6 +509,7 @@ namespace DuckovPad
             AimSnap.OutlineWidth = Mathf.Clamp01(AimSnap.OutlineWidth);
             if (string.IsNullOrWhiteSpace(AimSnap.OutlineColor)) AimSnap.OutlineColor = "#FFFFFF";
 
+            UiSnap.MenuDeadzone = Mathf.Clamp(UiSnap.MenuDeadzone, 0.05f, 0.6f);
             UiSnap.MagnetStrength = Mathf.Clamp01(UiSnap.MagnetStrength);
             UiSnap.MagnetRadius = Mathf.Max(0f, UiSnap.MagnetRadius);
             UiSnap.SnapConeDegrees = Mathf.Clamp(UiSnap.SnapConeDegrees, 15f, 89f);

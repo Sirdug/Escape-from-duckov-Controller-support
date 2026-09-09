@@ -345,7 +345,7 @@ namespace DuckovPad
             if (_config?.Debug == null || !_config.Debug.ShowOverlay) return;
 
             const float width = 430f;
-            var rect = new Rect(12f, 12f, width, 226f);
+            var rect = new Rect(12f, 12f, width, 262f);
             PadGui.Fill(rect, PadGui.Panel);
 
             var style = new GUIStyle(GUI.skin.label) { fontSize = 13, richText = false };
@@ -361,7 +361,10 @@ namespace DuckovPad
                 "  gates: title=" + (TitleGate.IsWaiting ? "waiting" : "-") +
                 " loading=" + (LoadingContinue.IsWaiting ? "waiting" : "-") + "\n" +
                 "  options tab: " + (_optionsUi != null && _optionsUi.Built ? "installed" : "not installed") + "\n" +
-                "  menu targets: " + (_ui?.SnapTargetCount ?? 0) + "\n";
+                "  menu targets: " + (_ui?.SnapTargetCount ?? 0) + "\n" +
+                "  ui focus: " + (_ui?.SelectedDescription ?? "-") +
+                "   slots: " + (_ui?.SlotCount ?? 0) + "\n" +
+                "  bumper: " + (_ui?.LastBumperMessage ?? "-") + "\n";
 
             if (_aim != null)
             {
@@ -457,6 +460,7 @@ namespace DuckovPad
 
             float deltaTime = Mathf.Min(Time.unscaledDeltaTime, 0.1f);
             bool inMenu = InMenu();
+            Pad.SetMenuContext(inMenu);
 
             UpdateDeviceFocus(inMenu);
             if (!_padHasFocus)
@@ -469,12 +473,18 @@ namespace DuckovPad
 
             if (inMenu)
             {
-                // Let the vanilla path keep running: it only reads the mouse, and the
-                // virtual cursor we drive *is* the mouse as far as the engine is concerned.
+                _gameplay.Reset();
+                if (control.inputManager != null)
+                {
+                    control.inputManager.SetMoveInput(Vector2.zero);
+                    control.inputManager.SetRunInput(false);
+                    control.inputManager.SetAdsInput(false);
+                    control.inputManager.SetTrigger(false, false, false);
+                }
                 _ui.Update(deltaTime);
                 ExpectCursorAt(_ui.CursorPosition);
                 RenderHud(inMenu: true);
-                return true;
+                return false;
             }
 
             if (_ui.CursorActive) _ui.Reset();
@@ -524,10 +534,104 @@ namespace DuckovPad
             if (!inMenu && _aim != null && _aim.LockedOn) _hud.ShowLockMarker(_aim.LockPoint, camera);
             else _hud.HideLockMarker();
 
-            // Driven by the eased blend rather than by LockedOn, so the outline fades in as the
-            // crosshair travels onto the target and fades back out as it hands control over.
-            if (!inMenu && _aim != null) _outline.Show(_aim.LockVisualTarget, _aim.LockBlend, camera);
+            // White frame around the locked body: always drawn while locked, so the
+            // target is unmistakable even when the 3D outline pipeline says no.
+            if (!inMenu && _aim != null && _aim.LockedOn && _aim.LockVisualTarget != null
+                && TryGetTargetScreenRect(_aim.LockVisualTarget, camera, out var lockRect))
+                _hud.ShowLockOutline(lockRect);
+            else _hud.HideLockOutline();
+
+            // Outline stays fully opaque while locked so the white target is unmistakable;
+            // it only fades during the release ease (LockVisualTarget outlives LockedOn).
+            if (!inMenu && _aim != null)
+            {
+                float blend = _aim.LockedOn ? 1f : _aim.LockBlend;
+                _outline.Show(_aim.LockVisualTarget, blend, camera);
+            }
             else _outline.Hide();
+        }
+
+        /// <summary>
+        /// Screen-space box around a locked target's visible body, for the white lock frame.
+        /// Encapsulates the active renderers' world bounds (colliders as fallback) and
+        /// projects the corners; hidden when the target is behind the camera.
+        /// </summary>
+        private static bool TryGetTargetScreenRect(Transform target, Camera camera, out Rect rect)
+        {
+            rect = default;
+            if (target == null || camera == null) return false;
+
+            bool has = false;
+            var bounds = new Bounds(target.position, Vector3.zero);
+
+            try
+            {
+                var renderers = target.GetComponentsInChildren<Renderer>(false);
+                foreach (var r in renderers)
+                {
+                    if (r == null || !r.enabled) continue;
+                    if (!has) { bounds = r.bounds; has = true; }
+                    else bounds.Encapsulate(r.bounds);
+                }
+
+                if (!has)
+                {
+                    var colliders = target.GetComponentsInChildren<Collider>(false);
+                    foreach (var c in colliders)
+                    {
+                        if (c == null || !c.enabled) continue;
+                        if (!has) { bounds = c.bounds; has = true; }
+                        else bounds.Encapsulate(c.bounds);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            if (!has) return false;
+
+            // Degenerate bounds (a point): pad to something frameable.
+            if (bounds.size.sqrMagnitude < 0.04f) bounds.Expand(1.2f);
+
+            Vector3 center = bounds.center;
+            Vector3 ext = bounds.extents;
+            float minX = float.MaxValue, minY = float.MaxValue;
+            float maxX = float.MinValue, maxY = float.MinValue;
+
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 corner = center + new Vector3(
+                    ((i & 1) == 0 ? -ext.x : ext.x),
+                    ((i & 2) == 0 ? -ext.y : ext.y),
+                    ((i & 4) == 0 ? -ext.z : ext.z));
+                Vector3 screen;
+                try
+                {
+                    screen = camera.WorldToScreenPoint(corner);
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+                if (screen.z < 0f) return false;
+                if (screen.x < minX) minX = screen.x;
+                if (screen.y < minY) minY = screen.y;
+                if (screen.x > maxX) maxX = screen.x;
+                if (screen.y > maxY) maxY = screen.y;
+            }
+
+            if (maxX < 0f || maxY < 0f || minX > Screen.width || minY > Screen.height) return false;
+
+            minX = Mathf.Clamp(minX, 0f, Screen.width);
+            minY = Mathf.Clamp(minY, 0f, Screen.height);
+            maxX = Mathf.Clamp(maxX, 0f, Screen.width);
+            maxY = Mathf.Clamp(maxY, 0f, Screen.height);
+            if (maxX - minX < 4f || maxY - minY < 4f) return false;
+
+            rect = Rect.MinMaxRect(minX, minY, maxX, maxY);
+            return true;
         }
 
         /// <summary>
@@ -553,6 +657,7 @@ namespace DuckovPad
                 return;
             }
 
+            Pad.SetMenuContext(true);
             UpdateDeviceFocus(inMenu: true);
             if (!_padHasFocus)
             {
@@ -571,6 +676,9 @@ namespace DuckovPad
         private static bool InMenu()
         {
             return View.ActiveView != null
+                   || Dialogues.DialogueUI.Active
+                   || ViewUtil.SplitDialogueOpen
+                   || (ItemOperationMenu.Instance != null && ItemOperationMenu.Instance.open)
                    || GameManager.Paused
                    || (PauseMenu.Instance != null && PauseMenu.Instance.Shown);
         }

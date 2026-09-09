@@ -22,6 +22,7 @@ namespace DuckovPad
         private Canvas _canvas;
         private RectTransform _bar;
         private RectTransform _lockMarker;
+        private RectTransform _lockOutline;
         private RectTransform _hoverBox;
 
         private TMP_FontAsset _font;
@@ -130,8 +131,13 @@ namespace DuckovPad
                 _hints.Add(new Hint(buttons.UiMark, "Wishlist"));
                 _hints.Add(new Hint(buttons.UiBack, selected ? "Cancel" : "Back"));
                 _hints.Add(new Hint("leftStick", _config.UiSnap.StickNavigation ? "Navigate" : "Cursor"));
-                _hints.Add(new Hint(buttons.UiPagePrevious, "Previous page"));
-                _hints.Add(new Hint(buttons.UiPageNext, "Next page"));
+                if (ViewUtil.StashOpen)
+                {
+                    _hints.Add(new Hint(buttons.UiStashPrevious, "Stash prev"));
+                    _hints.Add(new Hint(buttons.UiStashNext, "Stash next"));
+                }
+                _hints.Add(new Hint(buttons.UiPagePrevious, "Prev tab"));
+                _hints.Add(new Hint(buttons.UiPageNext, "Next tab"));
                 return;
             }
 
@@ -211,6 +217,9 @@ namespace DuckovPad
 
             _lockMarker = BuildImage("LockMarker", root.transform, _frameSprite, new Color(0.95f, 0.3f, 0.25f, 0.95f));
             _lockMarker.gameObject.SetActive(false);
+
+            _lockOutline = BuildImage("LockOutline", root.transform, _frameSprite, new Color(1f, 1f, 1f, 0.95f));
+            _lockOutline.gameObject.SetActive(false);
 
             _hoverBox = BuildImage("HoverBox", root.transform, _frameSprite, new Color(0.95f, 0.76f, 0.31f, 0.85f));
             _hoverBox.gameObject.SetActive(false);
@@ -401,6 +410,37 @@ namespace DuckovPad
         public void HideLockMarker()
         {
             if (_lockMarker != null) _lockMarker.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Guaranteed on-screen white frame around the locked target, sized to its
+        /// projected body. This is the fallback that always draws, even when the
+        /// game's 3D outline pipeline refuses the target's renderers.
+        /// </summary>
+        public void ShowLockOutline(Rect screenRect)
+        {
+            if (_lockOutline == null) return;
+            if (!_config.AimSnap.ShowOutline)
+            {
+                _lockOutline.gameObject.SetActive(false);
+                return;
+            }
+
+            _lockOutline.gameObject.SetActive(true);
+            _lockOutline.anchorMin = Vector2.zero;
+            _lockOutline.anchorMax = Vector2.zero;
+            _lockOutline.pivot = new Vector2(0.5f, 0.5f);
+
+            float scale = CanvasScale();
+            _lockOutline.sizeDelta = new Vector2(
+                Mathf.Max(28f, screenRect.width / scale + 10f),
+                Mathf.Max(28f, screenRect.height / scale + 10f));
+            _lockOutline.anchoredPosition = ScreenToCanvas(screenRect.center);
+        }
+
+        public void HideLockOutline()
+        {
+            if (_lockOutline != null) _lockOutline.gameObject.SetActive(false);
         }
 
         /// <summary>Outline the menu element the cursor is resting on.</summary>

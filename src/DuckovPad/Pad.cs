@@ -78,6 +78,18 @@ namespace DuckovPad
             new Dictionary<string, List<string[]>>(StringComparer.OrdinalIgnoreCase);
 
         private static readonly string[] NoModifiers = new string[0];
+        private static readonly Dictionary<string, List<string[]>> MenuModifierSets =
+            new Dictionary<string, List<string[]>>(StringComparer.OrdinalIgnoreCase);
+        private static readonly HashSet<string> TransitionButtons = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static bool _menuContext;
+
+        public static void SetMenuContext(bool menu)
+        {
+            if (_menuContext == menu) return;
+            _menuContext = menu;
+            foreach (var name in CaptureTriggerOrder)
+                if (Resolve(name)?.isPressed == true) TransitionButtons.Add(name);
+        }
 
         private static Gamepad _gamepad;
         private static string _modifier = "leftShoulder";
@@ -100,6 +112,7 @@ namespace DuckovPad
         {
             ControllerDevice.PointerMode = config.Aim.MixedPointer;
             ModifierSetsByButton.Clear();
+            MenuModifierSets.Clear();
             ControlCache.Clear();
             _modifier = Canonical(config.Buttons.Modifier);
             if (string.IsNullOrEmpty(_modifier)) _modifier = "leftShoulder";
@@ -115,10 +128,11 @@ namespace DuckovPad
                 Parse(raw, out var modifiers, out var button);
                 if (string.IsNullOrEmpty(button)) continue;
 
-                if (!ModifierSetsByButton.TryGetValue(button, out var sets))
+                var table = field.Name.StartsWith("Ui", StringComparison.Ordinal) ? MenuModifierSets : ModifierSetsByButton;
+                if (!table.TryGetValue(button, out var sets))
                 {
                     sets = new List<string[]>();
-                    ModifierSetsByButton[button] = sets;
+                    table[button] = sets;
                 }
 
                 bool alreadyRegistered = false;
@@ -183,6 +197,7 @@ namespace DuckovPad
                 ControllerDevice.Invalidate();
             }
             ControllerDevice.Poll(_gamepad);
+            TransitionButtons.RemoveWhere(name => Resolve(name)?.isPressed != true);
             if (_gamepad == null)
             {
                 ModifierHeld = false;
@@ -195,9 +210,11 @@ namespace DuckovPad
 
             if (_gamepad.lastUpdateTime > 0d)
             {
-                // Any stick deflection or button press counts as activity.
-                if (LeftStickRaw.sqrMagnitude > 0.04f ||
-                    RightStickRaw.sqrMagnitude > 0.04f ||
+                // Stick drift must not count as activity: small resting deflections
+                // (up to ~0.25) are ignored so a worn stick can't steal focus from
+                // the mouse or keep menus awake. Intentional pushes still register.
+                if (LeftStickRaw.sqrMagnitude > 0.0625f ||
+                    RightStickRaw.sqrMagnitude > 0.0625f ||
                     _gamepad.wasUpdatedThisFrame && AnyButtonPressed())
                 {
                     LastActivityTime = Time.unscaledTime;
@@ -348,7 +365,7 @@ namespace DuckovPad
             if (_gamepad == null || string.IsNullOrWhiteSpace(binding)) return false;
 
             Parse(binding, out var modifiers, out var buttonName);
-            if (string.IsNullOrEmpty(buttonName)) return false;
+            if (string.IsNullOrEmpty(buttonName) || TransitionButtons.Contains(buttonName)) return false;
 
             // Every listed modifier must be held.
             foreach (var modifier in modifiers)
@@ -359,7 +376,7 @@ namespace DuckovPad
 
             // A more specific chord on the same button wins. "A" stays quiet while
             // "LB+A" is being pressed, and "LB+Start" stays quiet during "LB+RB+Start".
-            if (ModifierSetsByButton.TryGetValue(buttonName, out var sets))
+            if ((_menuContext ? MenuModifierSets : ModifierSetsByButton).TryGetValue(buttonName, out var sets))
             {
                 foreach (var other in sets)
                 {

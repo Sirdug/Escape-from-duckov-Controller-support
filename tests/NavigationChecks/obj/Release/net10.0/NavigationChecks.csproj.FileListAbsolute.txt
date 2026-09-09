@@ -16,3 +16,4 @@ C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\N
 C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\NavigationChecks\obj\Release\net10.0\NavigationChecks.pdb
 C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\NavigationChecks\obj\Release\net10.0\NavigationChecks.genruntimeconfig.cache
 C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\NavigationChecks\obj\Release\net10.0\ref\NavigationChecks.dll
+C:\Users\aaron.aarons-pc\Documents\Escape from duckov Controller support\tests\NavigationChecks\obj\Release\net10.0\NavigationChecks.sourcelink.json

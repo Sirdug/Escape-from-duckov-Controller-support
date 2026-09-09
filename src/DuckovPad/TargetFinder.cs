@@ -140,6 +140,9 @@ namespace DuckovPad
 
                 if (!Team.IsEnemy(Teams.player, receiver.Team)) continue;
                 if (receiver.IsDead) continue;
+                // Sandbags and other half-cover carry damage receivers so weapons can
+                // damage them, but they are not enemies: never assist or lock onto them.
+                if (receiver.isHalfObsticle) continue;
 
                 LastHostileCount++;
 

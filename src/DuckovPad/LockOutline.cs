@@ -32,6 +32,7 @@ namespace DuckovPad
         private Transform _root;
         private GameObject _holder;
         private Outlinable _outlinable;
+        private int _addedCount;
 
         /// <summary>Set when a root has no usable renderers, so we don't rescan it every frame.</summary>
         private bool _rootRejected;
@@ -85,7 +86,7 @@ namespace DuckovPad
                 return;
             }
 
-            WarnIfNoOutliner(camera);
+            bool hasOutliner = HasOutliner(camera);
 
             Color colour = ParseColour(snap.OutlineColor);
             colour.a *= Mathf.Clamp01(blend);
@@ -95,8 +96,13 @@ namespace DuckovPad
             parameters.Color = colour;
             parameters.DilateShift = Mathf.Clamp01(snap.OutlineWidth);
 
+            // The holder is built inactive (see Build) so EPO sees a fully-registered
+            // Outlinable the moment it activates, mirroring how the game's own
+            // HalfObsticle prefab keeps its outline disabled until it is needed.
+            if (!_holder.activeSelf) _holder.SetActive(true);
             if (!_outlinable.enabled) _outlinable.enabled = true;
-            Status = "outlining " + root.name;
+            Status = "outlining " + root.name + " (" + _addedCount + " renderers"
+                + (hasOutliner ? "" : ", NO outliner on camera") + ")";
         }
 
         public void Hide()
@@ -111,6 +117,7 @@ namespace DuckovPad
             _outlinable = null;
             _root = null;
             _rootRejected = false;
+            _addedCount = 0;
             Status = "idle";
         }
 
@@ -119,15 +126,53 @@ namespace DuckovPad
         /// <summary>
         /// The lock target is a damage-receiver collider, which is often on a physics-only layer
         /// and carries no renderers of its own. Climb to the thing that actually has a body.
+        /// Walks up the hierarchy looking for an ancestor that actually owns outlineable
+        /// geometry, so a leaf collider can never resolve to a renderer-less root.
         /// </summary>
         private static Transform VisualRoot(Transform target)
         {
+            if (target == null) return null;
+
             var character = target.GetComponentInParent<CharacterMainControl>();
-            if (character != null) return character.transform;
+            if (character != null && HasOutlineableGeometry(character.transform)) return character.transform;
 
             var receiver = target.GetComponent<DamageReceiver>();
             if (receiver == null) receiver = target.GetComponentInParent<DamageReceiver>();
-            return receiver != null ? receiver.transform : target;
+
+            // Climb from the collider toward the root, preferring the closest ancestor
+            // that actually has something to outline. Falls back to the character root,
+            // then the receiver, then the raw target so we never return null for a live target.
+            Transform fallback = character != null ? character.transform : (receiver != null ? receiver.transform : target);
+            for (Transform t = target; t != null; t = t.parent)
+            {
+                if (HasOutlineableGeometry(t)) return t;
+                if (t == fallback) break;
+            }
+            if (fallback != null && HasOutlineableGeometry(fallback)) return fallback;
+            // Last resort: highest ancestor with any renderer, so Build() still has a chance.
+            Transform top = target;
+            while (top.parent != null) top = top.parent;
+            if (top != target && HasOutlineableGeometry(top)) return top;
+            return fallback;
+        }
+
+        private static bool HasOutlineableGeometry(Transform root)
+        {
+            if (root == null) return false;
+            var renderers = root.GetComponentsInChildren<Renderer>(true);
+            foreach (var r in renderers)
+            {
+                if (r is SkinnedMeshRenderer skinned)
+                {
+                    if (skinned.sharedMesh != null) return true;
+                }
+                else if (r is MeshRenderer)
+                {
+                    var filter = r.GetComponent<MeshFilter>();
+                    if (filter != null && filter.sharedMesh != null) return true;
+                }
+            }
+            return false;
         }
 
         private bool Build(Transform root)
@@ -136,6 +181,8 @@ namespace DuckovPad
             root.GetComponentsInChildren(false, _renderers);
 
             _holder = new GameObject(HolderName);
+            // Built inactive: targets are registered before EPO ever sees the component.
+            _holder.SetActive(false);
             _holder.transform.SetParent(root, false);
 
             _outlinable = _holder.AddComponent<Outlinable>();
@@ -143,8 +190,8 @@ namespace DuckovPad
             _outlinable.DrawingMode = OutlinableDrawingMode.Normal;
             _outlinable.ComplexMaskingMode = ComplexMaskingMode.None;
             _outlinable.OutlineLayer = 0;
-            _outlinable.BackParameters.Enabled = false;
-            _outlinable.FrontParameters.Enabled = false;
+            // Front/Back parameters intentionally left at EPO defaults to match the
+            // game's own HalfObsticle outline setup.
 
             int added = 0;
             int layer = -1;
@@ -176,6 +223,7 @@ namespace DuckovPad
                 Object.Destroy(_holder);
                 _holder = null;
                 _outlinable = null;
+                _addedCount = 0;
                 return false;
             }
 
@@ -183,6 +231,7 @@ namespace DuckovPad
             // culling mask, so the holder has to sit on a layer the camera actually draws —
             // borrowing one from a renderer we just outlined guarantees that.
             _holder.layer = layer;
+            _addedCount = added;
             return true;
         }
 
@@ -220,14 +269,19 @@ namespace DuckovPad
             return _colour;
         }
 
-        private void WarnIfNoOutliner(Camera camera)
+        private bool HasOutliner(Camera camera)
         {
-            if (_warnedNoOutliner || camera == null) return;
-            if (camera.GetComponent<Outliner>() != null) return;
+            if (camera == null) return false;
+            if (camera.GetComponent<Outliner>() != null) return true;
 
-            _warnedNoOutliner = true;
-            Log.Warn("The render camera has no EPO Outliner component, so the lock-on outline " +
-                     "cannot be drawn. Everything else about lock-on still works.");
+            if (!_warnedNoOutliner)
+            {
+                _warnedNoOutliner = true;
+                Log.Warn("The render camera has no EPO Outliner component, so the lock-on 3D outline " +
+                         "may not draw; the on-screen white lock frame is used instead. " +
+                         "Everything else about lock-on still works.");
+            }
+            return false;
         }
     }
 }
