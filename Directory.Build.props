@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <!-- Both the mod and navigation checks use the installed platform's assemblies. -->
+    <GameManaged Condition="'$(GameManaged)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/Steam/steamapps/common/Escape from Duckov/Duckov.app/Contents/Resources/Data/Managed</GameManaged>
+    <GameManaged Condition="'$(GameManaged)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">E:/SteamLibrary/steamapps/common/Escape from Duckov/Duckov_Data/Managed</GameManaged>
+  </PropertyGroup>
+</Project>

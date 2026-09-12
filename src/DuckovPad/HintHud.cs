@@ -155,7 +155,8 @@ namespace DuckovPad
 
             _hints.Add(new Hint(buttons.Interact, "Interact"));
             _hints.Add(new Hint(buttons.Reload, "Reload"));
-            _hints.Add(new Hint(buttons.SwitchWeapon, "Swap"));
+            _hints.Add(new Hint(buttons.SwitchWeapon, "Weapon"));
+            _hints.Add(new Hint(buttons.ShortcutNext, "Quick item"));
             _hints.Add(new Hint(buttons.Dash, "Dash"));
 
             if (_config.AimSnap.Enabled)

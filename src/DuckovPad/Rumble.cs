@@ -17,6 +17,7 @@ namespace DuckovPad
         private float _high;
         private float _decayPerSecond;
         private bool _motorsRunning;
+        private Gamepad _motorPad;
 
         public Rumble(PadConfig config)
         {
@@ -55,13 +56,14 @@ namespace DuckovPad
         public void Update(float deltaTime)
         {
             var gamepad = Pad.Current;
-            if (gamepad == null)
+            if (_motorPad != null && _motorPad != gamepad) Stop();
+            if (gamepad == null || !gamepad.added || !gamepad.enabled)
             {
-                _motorsRunning = false;
+                Stop();
                 return;
             }
 
-            if (!_config.Rumble.Enabled)
+            if (!_config.Rumble.Enabled || _config.Rumble.Scale <= 0f)
             {
                 Stop();
                 return;
@@ -82,6 +84,7 @@ namespace DuckovPad
             _high = Mathf.Max(0f, _high - decay);
 
             SafeSetMotors(gamepad, _low, _high);
+            _motorPad = gamepad;
             _motorsRunning = true;
         }
 
@@ -90,11 +93,11 @@ namespace DuckovPad
             _low = 0f;
             _high = 0f;
 
-            var gamepad = Pad.Current;
-            if (gamepad != null && _motorsRunning)
-                SafeSetMotors(gamepad, 0f, 0f);
+            if (_motorPad != null && _motorsRunning)
+                SafeSetMotors(_motorPad, 0f, 0f);
 
             _motorsRunning = false;
+            _motorPad = null;
         }
 
         private static void SafeSetMotors(Gamepad gamepad, float low, float high)

@@ -73,6 +73,58 @@ internal static class Program
             }
             Check(cursor == selected, "Selection stays on its slot after release at " + fps + " FPS");
         }
+        ScrollNavigationChecks();
         Console.WriteLine("Passed " + _checks + " navigation regression checks.");
+    }
+
+    private static void ScrollNavigationChecks()
+    {
+        var viewport = new Rect(0, 0, 160, 160);
+        Check(UiNavigation.RevealOffset(new Rect(0, 20, 36, 36), viewport, false, true) == Vector2.zero,
+            "Visible slots do not move the page");
+        Check(UiNavigation.RevealOffset(new Rect(40, -40, 36, 36), viewport, false, true) == new Vector2(0, 40),
+            "Moving below the viewport scrolls down by exactly one row");
+        Check(UiNavigation.RevealOffset(new Rect(40, 164, 36, 36), viewport, false, true) == new Vector2(0, -40),
+            "Moving above the viewport scrolls back up");
+        Check(UiNavigation.RevealOffset(new Rect(164, 40, 36, 36), viewport, true, false) == new Vector2(-40, 0),
+            "Horizontal lists reveal their next column");
+        Check(UiNavigation.RevealOffset(new Rect(164, -40, 36, 36), viewport, false, true) == new Vector2(0, 40),
+            "A vertical list cannot be shifted sideways");
+        Check(UiNavigation.RevealOffset(new Rect(0, -80, 160, 300), viewport, false, true) == Vector2.zero,
+            "An oversized quest row already covering the viewport stays stable");
+        Check(UiNavigation.RevealOffset(new Rect(0, -40, 36, 36), viewport, false, false) == Vector2.zero,
+            "Disabled scroll axes are preserved");
+
+        // Exercise a full long inventory, including offscreen rows, then reverse all
+        // the way to the top. The pointer must stay on the selected slot after each
+        // content movement and must never skip a row or jump columns.
+        var slots = new List<Rect>();
+        for (int row = 0; row < 30; row++)
+            for (int col = 0; col < 4; col++) slots.Add(new Rect(col * 40, 124 - row * 40, 36, 36));
+        int selected = 1;
+        foreach (int sign in new[] { 1, -1 })
+        {
+            Vector2 direction = sign == 1 ? Vector2.down : Vector2.up;
+            for (int step = 0; step < 29; step++)
+            {
+                int next = UiNavigation.FindNext(slots, slots[selected].center, direction, 65f);
+                Check(next == selected + 4 * sign, "Long inventory advances exactly one row in the same column");
+                Vector2 shift = UiNavigation.RevealOffset(slots[next], viewport, false, true);
+                for (int i = 0; i < slots.Count; i++)
+                {
+                    var rect = slots[i];
+                    rect.position += shift;
+                    slots[i] = rect;
+                }
+                selected = next;
+                Check(slots[selected].yMin >= viewport.yMin && slots[selected].yMax <= viewport.yMax,
+                    "The selected slot is completely visible after scrolling");
+                Check(UiNavigation.RevealOffset(slots[selected], viewport, false, true) == Vector2.zero,
+                    "Releasing the stick does not cause additional scrolling");
+            }
+        }
+        Check(selected == 1 && slots[1].yMax == viewport.yMax, "Reverse navigation returns to the original slot and page position");
+        Check(UiNavigation.FindNext(slots, slots[1].center, Vector2.up, 65f) == -1,
+            "The first row stops cleanly at the top of the list");
     }
 }

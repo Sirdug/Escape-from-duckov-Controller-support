@@ -21,6 +21,7 @@ namespace DuckovPad
 
         public void Confirm(GameObject target, Vector2 position)
         {
+            if (target == null || !target.activeInHierarchy) return;
             var selected = ItemUIUtilities.SelectedItemDisplay;
             var source = selected != null ? selected.GetComponentInParent<IItemDragSource>() as Component : null;
             if (target != null && source != null && source.gameObject != target
@@ -95,6 +96,23 @@ namespace DuckovPad
 
         public void ClickItemOrControl(GameObject target, Vector2 position, PointerEventData.InputButton button)
         {
+            if (target == null || !target.activeInHierarchy || EventSystem.current == null) return;
+            var selectedButton = target.GetComponent<Button>();
+            if (selectedButton != null)
+            {
+                if (!selectedButton.isActiveAndEnabled || !selectedButton.IsInteractable()) return;
+                // The highlight identifies this exact object. Never raycast again and
+                // accidentally activate a neighbour as the popup moves or resizes.
+                var menu = ItemOperationMenu.Instance;
+                bool inOperations = menu != null && menu.open && target.transform.IsChildOf(menu.transform);
+                selectedButton.OnPointerClick(new PointerEventData(EventSystem.current)
+                {
+                    position = position, button = button, clickTime = Time.unscaledTime, clickCount = 1
+                });
+                if (button == PointerEventData.InputButton.Left && inOperations && menu != null && menu.open)
+                    menu.Close();
+                return;
+            }
             var display = GetDisplay(target);
             if (display == null || display.Target == null)
             {
@@ -242,6 +260,9 @@ namespace DuckovPad
             foreach (var hit in _hits)
             {
                 if (!(hit.module is GraphicRaycaster)) continue;
+                // Match UiSnap's exposure rules: a tooltip may cover the selected
+                // control, but is never the recipient of its confirm click.
+                if (hit.gameObject.GetComponentInParent<ItemHoveringUI>() != null) continue;
                 var itemDisplay = hit.gameObject.GetComponentInParent<ItemDisplay>();
                 if (itemDisplay != null) LastItemClick?.SetValue(itemDisplay, Time.unscaledTime - 1f);
                 bool inOperations = ItemOperationMenu.Instance != null && ItemOperationMenu.Instance.open

@@ -19,6 +19,7 @@ internal static class Program
         TurnResponse();
         AssistCurves();
         ControllerProfiles();
+        PointerFocusChecks();
         Console.WriteLine("Passed " + _checks + " aiming and controller profile checks.");
     }
 
@@ -146,6 +147,18 @@ internal static class Program
         Check(Near(AimMath.Clamp(5, 0, 3), 3), "Clamp holds the ceiling");
         Check(Near(AimMath.Clamp(-5, 0, 3), 0), "Clamp holds the floor");
         Check(Near(AimMath.Clamp01(0.4f), 0.4f), "Clamp01 passes values through");
+    }
+
+    private static void PointerFocusChecks()
+    {
+        Check(!PointerFocus.ShouldYield(true, 40000f, 0f), "A rejected Mac cursor warp cannot steal pad focus");
+        Check(PointerFocus.ShouldYield(true, 121f, 4f), "Real Mac mouse movement takes focus");
+        Check(!PointerFocus.ShouldYield(true, 40000f, 40000f, true), "Mac warp motion cannot interrupt active stick input");
+        Check(PointerFocus.ShouldYield(true, 40000f, 4f, false), "Mouse takeover works after the controller settles");
+        Check(!PointerFocus.ShouldYield(true, 4f, 4f), "Cursor rounding does not steal focus");
+        Check(!PointerFocus.ShouldYield(true, 121f, 0.001f), "Tiny Mac mouse noise is ignored");
+        Check(PointerFocus.ShouldYield(false, 121f, 0f), "Existing Windows cursor arbitration is preserved");
+        Check(!PointerFocus.ShouldYield(false, 100f, 4f), "Divergence at the tolerance stays with the pad");
     }
 
     private static void ControllerProfiles()

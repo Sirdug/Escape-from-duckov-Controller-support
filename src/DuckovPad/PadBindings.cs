@@ -41,8 +41,8 @@ namespace DuckovPad
             new PadBinding { Section = "On foot", Field = "Reload", Label = "Reload" },
             new PadBinding { Section = "On foot", Field = "Interact", Label = "Interact" },
             new PadBinding { Section = "On foot", Field = "PutAway", Label = "Put away" },
-            new PadBinding { Section = "On foot", Field = "SwitchWeapon", Label = "Swap primary / secondary" },
-            new PadBinding { Section = "On foot", Field = "MeleeWeapon", Label = "Melee weapon" },
+            new PadBinding { Section = "On foot", Field = "SwitchWeapon", Label = "Cycle weapon slots (1, 2, melee)" },
+            new PadBinding { Section = "On foot", Field = "MeleeWeapon", Label = "Melee weapon (slot 3 directly)" },
             new PadBinding { Section = "On foot", Field = "CharacterSkill", Label = "Character skill (hold, release to use)" },
             new PadBinding { Section = "On foot", Field = "LockOn", Label = "Lock on / release lock" },
             new PadBinding { Section = "On foot", Field = "NightVision", Label = "Night vision" },
@@ -62,8 +62,8 @@ namespace DuckovPad
             new PadBinding { Section = "Items & menus", Field = "QuestLog", Label = "Quest log" },
             new PadBinding { Section = "Items & menus", Field = "CycleNext", Label = "Cycle next (scroll up)" },
             new PadBinding { Section = "Items & menus", Field = "CyclePrevious", Label = "Cycle previous (scroll down)" },
-            new PadBinding { Section = "Items & menus", Field = "ShortcutPrevious", Label = "Previous weapon slot" },
-            new PadBinding { Section = "Items & menus", Field = "ShortcutNext", Label = "Next weapon slot" },
+            new PadBinding { Section = "Items & menus", Field = "ShortcutPrevious", Label = "Previous quick-use slot (3-8)" },
+            new PadBinding { Section = "Items & menus", Field = "ShortcutNext", Label = "Next quick-use slot (3-8)" },
 
             // ---------------- In menus ----------------
             new PadBinding { Section = "In menus", Field = "UiClick", Label = "Select / grab / place" },

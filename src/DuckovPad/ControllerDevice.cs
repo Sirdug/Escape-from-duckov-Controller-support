@@ -12,6 +12,8 @@ namespace DuckovPad
         private static readonly InputHandle_t[] Handles = new InputHandle_t[16];
         private static float _nextPoll;
         private static bool _steamInitialized;
+        private static bool _steamUnavailable;
+        private static float _nextSteamAttempt;
         public static ControllerFamily Family { get; private set; }
         public static string Name { get; private set; } = "No controller connected";
         public static string Source { get; private set; } = "Connect a controller and press a button";
@@ -38,8 +40,15 @@ namespace DuckovPad
                 source = "Detected by the game";
                 try
                 {
-                    if (!_steamInitialized) _steamInitialized = SteamInput.Init(false);
-                    if (_steamInitialized)
+                    // Direct HID / Apple controller layouts already tell us the family.
+                    // Steam is optional metadata for virtual or unidentified pads only.
+                    bool needsSteam = family == ControllerFamily.Xbox || family == ControllerFamily.Generic;
+                    if (needsSteam && !_steamUnavailable && !_steamInitialized && Time.unscaledTime >= _nextSteamAttempt)
+                    {
+                        _nextSteamAttempt = Time.unscaledTime + 10f;
+                        _steamInitialized = SteamInput.Init(false);
+                    }
+                    if (needsSteam && _steamInitialized)
                     {
                         SteamInput.RunFrame();
                         int count = SteamInput.GetConnectedControllers(Handles);
@@ -64,11 +73,17 @@ namespace DuckovPad
                             source = "Virtual Xbox input; physical controller cannot be matched reliably";
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     _steamInitialized = false;
-                    // The game's Steam client may not be ready, or Steam may be disabled.
-                    // Direct device input continues to work; retry on the next poll.
+                    _nextSteamAttempt = Time.unscaledTime + 10f;
+                    // Missing or incompatible native libraries cannot recover by polling.
+                    // Keep normal controller input usable without throwing every second.
+                    if (e is DllNotFoundException || e is EntryPointNotFoundException || e is BadImageFormatException)
+                    {
+                        _steamUnavailable = true;
+                        Log.Warn("Steam Input identification unavailable; using the game's controller detection. " + e.Message);
+                    }
                 }
             }
             if (Family != family || Name != name || Source != source)

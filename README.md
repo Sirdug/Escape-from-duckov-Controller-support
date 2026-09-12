@@ -33,12 +33,13 @@ The base game ships with Unity Input System support, but it has almost no usable
 
 > Current support note: PlayStation controller support is still buggy and incomplete right now. It may work for some basic mappings, but full support is not reliable yet and is expected to improve over time.
 >
-> Current support note: macOS support is also buggy and incomplete right now. The project is currently focused on the Windows/Steam input environment, and better macOS support is expected down the line.
+> macOS: version 1.4.1 addresses rapid controller/mouse switching, app focus changes, and reconnect handling. See [Mac setup and testing](dist/DuckovPad/MacSetup.md). Hardware verification is still required.
 
 ### Menus and inventory
 
 - Controller navigation through inventory, equipment, and hotbar
-- D-pad and stick navigation with repeat behavior
+- D-pad and stick navigation with repeat behavior and automatic scrolling to the next row
+- NPC dialogue choices and A-to-continue text; quest Submit buttons and reward/confirmation popup focus
 - Quick item actions, placing, swapping, and confirm flows
 - Precision cursor support when needed
 - Native UI styling that matches the game’s own options pages
@@ -47,7 +48,7 @@ The base game ships with Unity Input System support, but it has almost no usable
 
 ## Install
 
-> Platform note: this project is intended primarily for Windows/Steam-based setups. PlayStation and macOS support are both still buggy and incomplete right now, with support expected to improve down the line.
+> Mac users: follow [Mac setup](dist/DuckovPad/MacSetup.md); the Windows installation path below does not apply. PlayStation hardware support remains incomplete.
 
 The mod is already set up for a local install at:
 
@@ -85,11 +86,11 @@ Important:
 | A | Interact |
 | B | Dash |
 | X | Reload |
-| Y | Swap primary / secondary |
+| Y | Cycle weapon slots 1 → 2 → 3 (primary, secondary, melee) |
 | RB | Character skill (hold to aim, release to use) |
 | LB (tap) | Cycle weapon slots 1 → 2 → 3 (hold LB for the layer below) |
 | D-pad ↑ / ↓ | Mouse-wheel equivalent for ammo / interaction target / weapon scroll |
-| D-pad ← / → | Cycle weapon slots 1 → 2 → 3 |
+| D-pad ← / → | Step back / forward through quick-use item slots 3–8, using the slot you land on (wraps) |
 | Start | Inventory / stash |
 | Select | Map |
 
@@ -99,10 +100,10 @@ The prompt bar displays these actions while LB is held, so there is no long memo
 
 | Control | Action |
 | --- | --- |
-| LB + D-pad ↑ → ↓ ← | Quick-use item slots 3, 4, 5, 6 |
+| LB + D-pad ↑ → ↓ ← | Quick-use item slots 3, 4, 5, 6 directly (slots 7 and 8 are reached with D-pad ← / →) |
 | LB + A | Put away |
 | LB + X | Stop action |
-| LB + Y | Melee weapon |
+| LB + Y | Melee weapon (slot 3) directly |
 | LB + B | Quack |
 | LB + L3 | Night vision |
 | LB + R3 | Toggle camera view |
@@ -254,6 +255,8 @@ Turn on Options → Controller → Troubleshooting → Diagnostic overlay to ins
 
 ### Build
 
+On macOS, `bash scripts/build-macos.sh` builds and checks against the default Steam installation. Set `GAME_MANAGED` for another library location.
+
 ```bash
 dotnet build src/DuckovPad/DuckovPad.csproj -c Release
 ```
@@ -325,7 +328,7 @@ tests/
 
 - UI and binding validation needs live in-game testing.
 - PlayStation controller support is still buggy and incomplete right now. Full support is not reliable yet and is expected to improve over time.
-- macOS support is also buggy and incomplete right now. This project is currently focused on the Windows/Steam input environment, with better support expected down the line.
+- macOS fixes are compiled against the Mac game and regression checked; live Xbox Bluetooth/USB input, cursor handoff, and rumble still require verification.
 - Steam Deck gyro, trackpad, rear buttons, touch, rumble, and reconnect behavior need hardware verification.
 - The game’s native interaction prompts still show keyboard keys; DuckovPad adds a controller prompt bar alongside them.
 - Text entry still requires a keyboard.

@@ -19,10 +19,6 @@ namespace DuckovPad
     {
         private const string HarmonyId = "com.duckovpad.controller";
 
-        /// <summary>How far (squared, in pixels) the real cursor may drift from where we
-        /// warped it before we assume the player has gone back to the mouse.</summary>
-        private const float CursorDivergenceThresholdSqr = 100f;
-
         internal static ModBehaviour Instance { get; private set; }
 
         private Harmony _harmony;
@@ -65,7 +61,7 @@ namespace DuckovPad
             }
         }
 
-        internal bool Active => _userEnabled && _config != null && !SceneLoading;
+        internal bool Active => _userEnabled && _config != null && !SceneLoading && Application.isFocused;
 
         // ------------------------------------------------------------------
 
@@ -165,10 +161,27 @@ namespace DuckovPad
             }
         }
 
+        private void OnApplicationFocus(bool focused)
+        {
+            _padHasFocus = false;
+            _expectingCursorPosition = false;
+            ControllerDevice.PointerDelta = Vector2.zero;
+            Pad.ResetActivity();
+            _gameplay?.Reset();
+            _ui?.Reset();
+            _rumble?.Stop();
+            _hud?.Hide();
+            _outline?.Hide();
+            if (focused) ControllerDevice.Invalidate();
+        }
+
         private void OnDeviceChange(InputDevice device, InputDeviceChange change)
         {
+            if (!(device is Gamepad) && !(device is Joystick)) return;
             if (change == InputDeviceChange.Added || change == InputDeviceChange.Removed ||
-                change == InputDeviceChange.Reconnected || change == InputDeviceChange.Disconnected)
+                change == InputDeviceChange.Reconnected || change == InputDeviceChange.Disconnected ||
+                change == InputDeviceChange.Enabled || change == InputDeviceChange.Disabled ||
+                change == InputDeviceChange.ConfigurationChanged)
             {
                 Pad.InvalidateCache();
                 ControllerDevice.Invalidate();
@@ -206,7 +219,11 @@ namespace DuckovPad
                           .Append(isGamepad ? "[GAMEPAD] " : "          ")
                           .Append(device.GetType().Name)
                           .Append(" \"").Append(device.displayName).Append('"')
-                          .Append(device.enabled ? "" : " (disabled)");
+                          .Append(device.enabled ? "" : " (disabled)")
+                          .Append(" layout=").Append(device.layout)
+                          .Append(" interface=").Append(device.description.interfaceName)
+                          .Append(" manufacturer=").Append(device.description.manufacturer)
+                          .Append(" product=").Append(device.description.product);
                 }
 
                 report.Append("\n  Gamepad.current: ")
@@ -258,7 +275,7 @@ namespace DuckovPad
 
         private void Update()
         {
-            if (_config == null) return;
+            if (_config == null || !Application.isFocused) return;
 
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard[_toggleKey].wasPressedThisFrame)
@@ -716,6 +733,12 @@ namespace DuckovPad
             if (!_padHasFocus) return;
 
             var mouse = Mouse.current;
+            bool macOS = Application.platform == RuntimePlatform.OSXPlayer;
+            float leftDeadzone = inMenu ? Mathf.Min(_config.UiSnap.MenuDeadzone, _config.Cursor.Deadzone) : _config.Move.Deadzone;
+            float rightDeadzone = inMenu ? _config.UiSnap.MenuDeadzone : _config.Aim.Deadzone;
+            bool padActive = Time.unscaledTime - Pad.LastActivityTime < 0.25f ||
+                Pad.LeftStickRaw.sqrMagnitude > leftDeadzone * leftDeadzone ||
+                Pad.RightStickRaw.sqrMagnitude > rightDeadzone * rightDeadzone;
 
             if (!inMenu)
             {
@@ -727,7 +750,8 @@ namespace DuckovPad
                     return;
                 }
 
-                if (!ControllerDevice.UsePointer && mouse != null && (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame))
+                if (!ControllerDevice.UsePointer && !(macOS && padActive) && mouse != null &&
+                    (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame))
                 {
                     _padHasFocus = false;
                     return;
@@ -736,8 +760,7 @@ namespace DuckovPad
 
             if (mouse == null || !_expectingCursorPosition) return;
 
-            // The cursor is warped to a known point every frame we are in control, so a
-            // position that doesn't match means the player physically moved the mouse.
+            // Absolute divergence can also be an asynchronous/rejected OS cursor warp.
             Vector2 actual = mouse.position.ReadValue();
             if (ControllerDevice.UsePointer)
             {
@@ -747,7 +770,10 @@ namespace DuckovPad
                 if (difference.sqrMagnitude > 0.01f) ControllerDevice.PointerDelta = difference;
                 return;
             }
-            if ((actual - _expectedCursorPosition).sqrMagnitude > CursorDivergenceThresholdSqr)
+            // A macOS warp can itself arrive with motion. While the sticks are in use,
+            // keep pad ownership, including simultaneous Steam Input mouse clicks.
+            if (PointerFocus.ShouldYield(macOS,
+                (actual - _expectedCursorPosition).sqrMagnitude, mouse.delta.ReadValue().sqrMagnitude, padActive))
                 _padHasFocus = false;
         }
 

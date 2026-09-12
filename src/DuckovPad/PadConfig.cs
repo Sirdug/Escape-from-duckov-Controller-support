@@ -339,7 +339,9 @@ namespace DuckovPad
             public string Reload = "X";
             public string Interact = "A";
             public string PutAway = "LB+A";
+            /// <summary>Walks the three weapon slots: primary, secondary, melee.</summary>
             public string SwitchWeapon = "Y";
+            /// <summary>Jumps straight to melee without walking through the other two.</summary>
             public string MeleeWeapon = "LB+Y";
             public string CharacterSkill = "RB";
             /// <summary>Lock aim onto an enemy.</summary>
@@ -361,10 +363,12 @@ namespace DuckovPad
             // depending on the game's own scroll-wheel behaviour setting.
             public string CycleNext = "DpadUp";
             public string CyclePrevious = "DpadDown";
+            // Walks the quick-use bar, slots 3..8, firing each slot it lands on.
             public string ShortcutPrevious = "DpadLeft";
             public string ShortcutNext = "DpadRight";
 
-            // Quick-use item slots 3..6, reached with the modifier held.
+            // Direct quick-use item slots 3..6, reached with the modifier held.
+            // Slots 7 and 8 have no direct chord: the D-pad walk reaches them.
             public string QuickItem3 = "LB+DpadUp";
             public string QuickItem4 = "LB+DpadRight";
             public string QuickItem5 = "LB+DpadDown";

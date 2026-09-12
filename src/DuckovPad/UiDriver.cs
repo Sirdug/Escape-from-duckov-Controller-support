@@ -33,6 +33,9 @@ namespace DuckovPad
         private View _view;
         private bool _operationMenuOpen;
         private bool _splitDialogueOpen;
+        private bool _dialogueOpen;
+        private bool _dialogueChoosing;
+        private Transform _popupRoot;
         private GameObject _returnTarget;
         private bool _wasFreeCursor;
         private bool _hidCursor;
@@ -73,6 +76,9 @@ namespace DuckovPad
             _returnTarget = null;
             _operationMenuOpen = false;
             _splitDialogueOpen = false;
+            _dialogueOpen = false;
+            _dialogueChoosing = false;
+            _popupRoot = null;
             _cursorInitialised = false;
             _pointerActive = false;
             CursorActive = false;
@@ -110,20 +116,32 @@ namespace DuckovPad
 
             var buttons = _config.Buttons;
             var settings = _config.Cursor;
+            // Snapshot the highlight the player saw before this frame can rebuild or
+            // navigate the menu. A disappearing action must not turn A into Drop.
+            var displayedTarget = _snap.SelectedObject;
+            bool confirmPressed = Pad.Down(buttons.UiClick);
             Vector2 pointerDelta = _cursorInitialised ? ControllerDevice.PointerDelta : Vector2.zero;
 
             bool operationMenuOpen = ItemOperationMenu.Instance != null && ItemOperationMenu.Instance.open;
             bool splitDialogueOpen = ViewUtil.SplitDialogueOpen;
-            if (_view != View.ActiveView || _operationMenuOpen != operationMenuOpen || _splitDialogueOpen != splitDialogueOpen)
+            bool dialogueOpen = DialogueUI.Active;
+            bool dialogueChoosing = ViewUtil.DialogueChoosing;
+            var popupRoot = ViewUtil.PopupRoot;
+            if (_view != View.ActiveView || _operationMenuOpen != operationMenuOpen || _splitDialogueOpen != splitDialogueOpen ||
+                _dialogueOpen != dialogueOpen || _dialogueChoosing != dialogueChoosing || _popupRoot != popupRoot)
             {
                 bool freshView = _view != View.ActiveView;
-                if (operationMenuOpen && !_operationMenuOpen) _returnTarget = _snap.SelectedObject;
+                if (operationMenuOpen && !_operationMenuOpen || popupRoot != null && _popupRoot == null)
+                    _returnTarget = _snap.SelectedObject;
                 _view = View.ActiveView;
                 _operationMenuOpen = operationMenuOpen;
                 _splitDialogueOpen = splitDialogueOpen;
+                _dialogueOpen = dialogueOpen;
+                _dialogueChoosing = dialogueChoosing;
+                _popupRoot = popupRoot;
                 _snap.Invalidate();
                 if (freshView) RequestAutoSelectFor(_view);
-                if (!operationMenuOpen && !splitDialogueOpen && _returnTarget != null)
+                if (!operationMenuOpen && !splitDialogueOpen && popupRoot == null && _returnTarget != null)
                 {
                     _snap.RestoreSelection(_returnTarget);
                     _returnTarget = null;
@@ -144,7 +162,7 @@ namespace DuckovPad
             FlushKeyReleases();
             bool capturingBind = PadBindingRow.SuppressMenuKeys();
             bool builder = IsBuilderActive();
-            if (!capturingBind && !builder && !splitDialogueOpen)
+            if (!capturingBind && !builder && !splitDialogueOpen && !dialogueOpen && popupRoot == null)
             {
                 int direction = Pad.Down(buttons.UiPageNext) ? 1
                     : Pad.Down(buttons.UiPagePrevious) ? -1 : 0;
@@ -204,7 +222,7 @@ namespace DuckovPad
             }
             Vector2 step = _navigation.ReadStep(freeCursor || dpadOnly ? Vector2.zero : Pad.LeftStickRaw,
                 dpad, Time.unscaledTime, menuDeadzone);
-            if (step != Vector2.zero && !_snap.AdjustSlider(step))
+            if (!confirmPressed && step != Vector2.zero && !_snap.AdjustSlider(step))
                 _snap.TrySnap(_cursor, step, out _cursor);
             if (freeCursor)
                 _cursor = _snap.ApplyMagnetism(_cursor, stick.magnitude, deltaTime,
@@ -254,9 +272,16 @@ namespace DuckovPad
             ApplyCursorVisibility();
 
             bool canActivate = _snap.CanActivateSelection();
-            if (!freeCursor && canActivate)
+            if (!capturingBind && popupRoot == null && dialogueOpen && !dialogueChoosing && Pad.Down(buttons.UiClick))
             {
-                if (Pad.Down(buttons.UiClick)) _actions.Confirm(_snap.SelectedObject, _cursor);
+                // Subtitle panels are intentionally not snap targets. Advance through
+                // the game's normal confirm path without needing a mouse hit on text.
+                DialogueUI.instance.Confirm();
+            }
+            else if (!freeCursor && canActivate)
+            {
+                if (confirmPressed && displayedTarget != null && displayedTarget == _snap.SelectedObject)
+                    _actions.Confirm(displayedTarget, _cursor);
                 if (Pad.Down(buttons.UiContext)) _actions.ClickItemOrControl(_snap.SelectedObject, _cursor, PointerEventData.InputButton.Right);
             }
             if (canActivate && Pad.Down(buttons.UiQuickMove)) _actions.QuickMove(_snap.SelectedObject);
@@ -281,7 +306,7 @@ namespace DuckovPad
                     if (Pad.Down(buttons.UiRotate)) PressKey(Key.Q);    // Builder_Rotate
                 }
 
-                if (Pad.Down(buttons.UiClose)) CloseActiveView();
+                if (!dialogueOpen && popupRoot == null && Pad.Down(buttons.UiClose)) CloseActiveView();
             }
 
             // Either Continue gate can strand the whole game; any pad button passes.
@@ -311,6 +336,10 @@ namespace DuckovPad
         {
             // A Controls-tab binding row is listening: cancel it instead of backing out.
             if (PadBindingRow.ConsumeBackForCapture()) return;
+            // Conversation exits are choices owned by the dialogue tree. Do not
+            // close an unrelated shop/quest view behind an active conversation.
+            if (DialogueUI.Active) return;
+            if (ViewUtil.PopupRoot != null) return;
             if (ViewUtil.SplitDialogueOpen)
                 SplitDialogue.Instance.Cancel();
             else if (ItemOperationMenu.Instance != null && ItemOperationMenu.Instance.open)

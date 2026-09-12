@@ -60,6 +60,24 @@ namespace DuckovPad
                    && rect.width * rect.height < width * height * 0.2f;
         }
 
+        /// <summary>Smallest content movement that reveals a target in viewport coordinates.</summary>
+        public static Vector2 RevealOffset(Rect target, Rect viewport, bool horizontal, bool vertical)
+        {
+            float x = horizontal ? RevealAxis(target.xMin, target.xMax, viewport.xMin, viewport.xMax) : 0f;
+            float y = vertical ? RevealAxis(target.yMin, target.yMax, viewport.yMin, viewport.yMax) : 0f;
+            return new Vector2(x, y);
+        }
+
+        private static float RevealAxis(float min, float max, float viewMin, float viewMax)
+        {
+            // A row taller than its viewport cannot fit. Keep it still if it already
+            // covers the viewport, otherwise reveal the nearest edge without oscillation.
+            if (min <= viewMin && max >= viewMax) return 0f;
+            if (min < viewMin) return viewMin - min;
+            if (max > viewMax) return viewMax - max;
+            return 0f;
+        }
+
         public static int FindNearest(IReadOnlyList<Rect> rects, Vector2 cursor, float radius)
         {
             int best = -1;

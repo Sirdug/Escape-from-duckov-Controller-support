@@ -23,6 +23,9 @@ namespace DuckovPad
         private readonly Rumble _rumble;
 
         private int _weaponSlot = 1;
+
+        /// <summary>Quick-use slot the D-pad stepper last fired; 0 before the first press.</summary>
+        private int _quickSlot;
         private bool _skillAimActive;
         private bool _lockFromTrigger;
         private bool _lockFromAim;
@@ -33,6 +36,14 @@ namespace DuckovPad
 
         /// <summary>Quick lone tap that still counts as a tap, in seconds.</summary>
         private const float ModifierTapWindow = 0.35f;
+
+        /// <summary>
+        /// The game's quick-use bar. Shortcut inputs only exist for 3..8
+        /// (<c>OnShortCutInput3</c>..<c>8</c>); slots 1, 2 and melee are weapon agents
+        /// driven through <c>InputManager.SwitchItemAgent</c> instead.
+        /// </summary>
+        private const int FirstQuickSlot = 3;
+        private const int LastQuickSlot = 8;
 
         public bool AdsHeld { get; private set; }
 
@@ -54,6 +65,7 @@ namespace DuckovPad
             _lockFromAim = false;
             _prevAdsHeld = false;
             _modifierTapArmed = false;
+            _quickSlot = 0;
             AdsHeld = false;
             _aim.Reset();
         }
@@ -205,11 +217,8 @@ namespace DuckovPad
             }
 
             // ---------------- weapons & items ----------------
-            if (Pad.Down(buttons.SwitchWeapon))
-            {
-                _weaponSlot = _weaponSlot == 1 ? 2 : 1;
-                inputManager.SwitchItemAgent(_weaponSlot);
-            }
+            // Y walks the three weapon slots: primary, secondary, melee.
+            if (Pad.Down(buttons.SwitchWeapon)) CycleItemAgent(inputManager, 1);
 
             if (Pad.Down(buttons.MeleeWeapon))
             {
@@ -217,8 +226,9 @@ namespace DuckovPad
                 inputManager.SwitchItemAgent(3);
             }
 
-            if (Pad.Down(buttons.ShortcutNext)) CycleItemAgent(inputManager, 1);
-            if (Pad.Down(buttons.ShortcutPrevious)) CycleItemAgent(inputManager, -1);
+            // D-pad left/right walks the quick-use bar, slots 3 through 8.
+            if (Pad.Down(buttons.ShortcutNext)) StepQuickSlot(control, 1);
+            if (Pad.Down(buttons.ShortcutPrevious)) StepQuickSlot(control, -1);
 
             // Lone LB tap cycles held weapons too. A lone tap is otherwise unused in
             // gameplay — LB only modifies chords while held — so this costs nothing,
@@ -240,6 +250,26 @@ namespace DuckovPad
             if (Pad.Down(buttons.Inventory)) ToggleInventory();
             if (Pad.Down(buttons.Map)) ToggleMap();
             if (Pad.Down(buttons.QuestLog)) ToggleQuestLog();
+        }
+
+        /// <summary>
+        /// Step one place along the quick-use bar and fire the slot we land on. The
+        /// walk wraps inside 3..8; the first press after a reset starts at whichever
+        /// end of the range the direction comes from, so one tap reaches slot 3 or 8.
+        /// </summary>
+        private void StepQuickSlot(CharacterInputControl control, int direction)
+        {
+            if (_quickSlot < FirstQuickSlot || _quickSlot > LastQuickSlot)
+            {
+                _quickSlot = direction > 0 ? FirstQuickSlot : LastQuickSlot;
+            }
+            else
+            {
+                _quickSlot += direction;
+                if (_quickSlot > LastQuickSlot) _quickSlot = FirstQuickSlot;
+                if (_quickSlot < FirstQuickSlot) _quickSlot = LastQuickSlot;
+            }
+            ShortCut(control, _quickSlot);
         }
 
         private void CycleItemAgent(InputManager inputManager, int direction)

@@ -6,5 +6,6 @@
   <ItemGroup>
     <Compile Include="../../src/DuckovPad/AimMath.cs" Link="AimMath.cs" />
     <Compile Include="../../src/DuckovPad/ControllerProfile.cs" Link="ControllerProfile.cs" />
+    <Compile Include="../../src/DuckovPad/PointerFocus.cs" Link="PointerFocus.cs" />
   </ItemGroup>
 </Project>

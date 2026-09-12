@@ -103,6 +103,14 @@ namespace DuckovPad
         /// <summary>Time (unscaled) of the most recent gamepad activity of any kind.</summary>
         public static float LastActivityTime { get; private set; }
 
+        public static void ResetActivity()
+        {
+            LastActivityTime = float.NegativeInfinity;
+            ModifierHeld = false;
+            foreach (var name in CaptureTriggerOrder)
+                if (Resolve(name)?.isPressed == true) TransitionButtons.Add(name);
+        }
+
         // -----------------------------------------------------------------
 
         /// <summary>
@@ -193,6 +201,8 @@ namespace DuckovPad
             {
                 if (_gamepad != null) { try { _gamepad.SetMotorSpeeds(0, 0); } catch (Exception) { } }
                 _gamepad = next;
+                TransitionButtons.Clear();
+                LastActivityTime = float.NegativeInfinity;
                 InvalidateCache();
                 ControllerDevice.Invalidate();
             }

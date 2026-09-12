@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Duckov.UI;
+using Duckov.Quests.UI;
+using Duckov.Economy.UI;
+using Dialogues;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -13,11 +16,17 @@ namespace DuckovPad
         private readonly PadConfig _config;
         private readonly List<Rect> _rects = new List<Rect>(256);
         private readonly List<GameObject> _objects = new List<GameObject>(256);
+        private readonly List<GameObject> _clippedObjects = new List<GameObject>(256);
+        private readonly List<Rect> _clippedRects = new List<Rect>(256);
+        private readonly List<GameObject> _navigationObjects = new List<GameObject>(256);
+        private readonly List<Rect> _navigationRects = new List<Rect>(256);
         private readonly List<RaycastResult> _hits = new List<RaycastResult>(32);
         private readonly Vector3[] _corners = new Vector3[4];
         private PointerEventData _pointer;
         private GameObject _selected;
+        private GameObject _nativeSelection;
         private float _nextScanTime;
+        private int _lastScanFrame = -1;
 
         public Rect HoverRect { get; private set; }
         public bool HasHover { get; private set; }
@@ -29,14 +38,21 @@ namespace DuckovPad
         public void Invalidate()
         {
             _nextScanTime = 0f;
+            _lastScanFrame = -1;
             _rects.Clear();
             _objects.Clear();
+            _clippedObjects.Clear();
+            _clippedRects.Clear();
             ClearSelection();
             CancelAutoSelect();
         }
 
         public void ClearSelection()
         {
+            if (_nativeSelection != null && EventSystem.current != null &&
+                EventSystem.current.currentSelectedGameObject == _nativeSelection)
+                EventSystem.current.SetSelectedGameObject(null);
+            _nativeSelection = null;
             _selected = null;
             HasHover = false;
         }
@@ -44,9 +60,12 @@ namespace DuckovPad
         public void Refresh()
         {
             if (Time.unscaledTime < _nextScanTime) return;
+            _lastScanFrame = Time.frameCount;
             _nextScanTime = Time.unscaledTime + _config.UiSnap.RescanInterval;
             _rects.Clear();
             _objects.Clear();
+            _clippedObjects.Clear();
+            _clippedRects.Clear();
             try
             {
                 var eventSystem = EventSystem.current;
@@ -76,7 +95,9 @@ namespace DuckovPad
                 if (component is Behaviour behaviour && !behaviour.isActiveAndEnabled) continue;
                 // This game's backdrop click handler is intentionally a no-op. It was
                 // attracting the cursor to the middle of the entire inventory view.
-                if (component is CloseViewOnPointerClick || component is View) continue;
+                if (component is CloseViewOnPointerClick || component is View || component is DialogueUI || component is TaskEntry) continue;
+                // TaskEntry's row click is a cheat-only handler. Its actual Submit
+                // button is scanned independently; focusing the row made A do nothing.
 
                 // Occupied slots have an ItemDisplay child. Use the slot itself so empty
                 // and occupied slots have the same box, and each slot is only one stop.
@@ -87,6 +108,7 @@ namespace DuckovPad
                         Component slot = parent.GetComponent<InventoryEntry>();
                         if (slot == null) slot = parent.GetComponent<SlotDisplay>();
                         if (slot == null) slot = parent.GetComponent<ItemShortcutEditorEntry>();
+                        if (slot == null) slot = parent.GetComponent<StockShopItemEntry>();
                         if (slot == null) continue;
                         component = slot;
                         break;
@@ -94,11 +116,14 @@ namespace DuckovPad
                 }
 
                 var go = component.gameObject;
-                if (ViewUtil.SplitDialogueOpen
-                    && !go.transform.IsChildOf(SplitDialogue.Instance.transform)) continue;
+                Transform inputRoot = ViewUtil.PopupRoot;
                 var menu = ItemOperationMenu.Instance;
-                if (menu != null && menu.open && !go.transform.IsChildOf(menu.transform)) continue;
-                if (!go.activeInHierarchy || _objects.Contains(go)) continue;
+                if (inputRoot == null && ViewUtil.SplitDialogueOpen) inputRoot = SplitDialogue.Instance.transform;
+                if (inputRoot == null && menu != null && menu.open) inputRoot = menu.transform;
+                if (inputRoot == null && DialogueUI.Active) inputRoot = DialogueUI.instance.transform;
+                if (inputRoot != null && !go.transform.IsChildOf(inputRoot)) continue;
+                if (menu != null && inputRoot == menu.transform && go.GetComponent<Button>() == null) continue;
+                if (!go.activeInHierarchy || _objects.Contains(go) || _clippedObjects.Contains(go)) continue;
                 if (component is Behaviour targetBehaviour && !targetBehaviour.isActiveAndEnabled) continue;
                 var entry = go.GetComponent<InventoryEntry>();
                 if (entry != null && entry.Disabled) continue;
@@ -106,7 +131,17 @@ namespace DuckovPad
                 if (!IsInteractable(go)) continue;
                 if (!TryGetScreenRect(transform, camera, out var rect)) continue;
                 if (!UiNavigation.IsTargetSize(rect, Screen.width, Screen.height)) continue;
-                if (!IsExposed(go, rect.center)) continue;
+                if (!IsExposed(go, rect.center))
+                {
+                    // Retain only targets actually clipped by a scroll viewport.
+                    // These never participate in hover or activation until revealed.
+                    if (IsScrollClipped(go.transform, rect.center, camera))
+                    {
+                        _clippedObjects.Add(go);
+                        _clippedRects.Add(rect);
+                    }
+                    continue;
+                }
                 _objects.Add(go);
                 _rects.Add(rect);
             }
@@ -169,6 +204,14 @@ namespace DuckovPad
         private Vector2 Select(int index)
         {
             _selected = _objects[index];
+            var menu = ItemOperationMenu.Instance;
+            if (menu != null && menu.open && _selected.transform.IsChildOf(menu.transform) &&
+                _selected.GetComponent<Button>() != null && EventSystem.current != null)
+            {
+                _nativeSelection = _selected;
+                if (EventSystem.current.currentSelectedGameObject != _selected)
+                    EventSystem.current.SetSelectedGameObject(_selected);
+            }
             HoverRect = _rects[index];
             HasHover = true;
             return HoverRect.center;
@@ -177,6 +220,21 @@ namespace DuckovPad
         public bool KeepSelection(Vector2 cursor, out Vector2 destination)
         {
             int index = _selected != null ? _objects.IndexOf(_selected) : -1;
+            if (index < 0 && DialogueUI.Active)
+            {
+                for (int i = 0; i < _objects.Count; i++)
+                    if (_objects[i].GetComponent<DialogueUIChoice>() != null &&
+                        (index < 0 || _rects[i].center.y > _rects[index].center.y)) index = i;
+            }
+            var menu = ItemOperationMenu.Instance;
+            if (index < 0 && menu != null && menu.open)
+            {
+                // Start at the first enabled action, not whichever destructive action
+                // happens to be nearest the old inventory cursor position.
+                for (int i = 0; i < _objects.Count; i++)
+                    if (_objects[i].GetComponent<Button>() != null && _objects[i].transform.IsChildOf(menu.transform) &&
+                        (index < 0 || _rects[i].center.y > _rects[index].center.y)) index = i;
+            }
             if (index < 0) index = UiNavigation.FindNearest(_rects, cursor, float.MaxValue);
             destination = cursor;
             if (index < 0)
@@ -198,11 +256,114 @@ namespace DuckovPad
 
         public bool TrySnap(Vector2 cursor, Vector2 direction, out Vector2 destination)
         {
+            // Scrolling/layout changes can happen between regular scans. Directional
+            // steps must use today's geometry, especially while holding down the stick.
+            if (_lastScanFrame != Time.frameCount)
+            {
+                _nextScanTime = 0f;
+                Refresh();
+            }
+            int current = _selected != null ? _objects.IndexOf(_selected) : -1;
+            if (current >= 0) cursor = _rects[current].center;
+            var scroll = current >= 0 ? ContentScroll(_selected.transform, direction) : null;
+            if (scroll != null && (direction.y != 0f && scroll.vertical || direction.x != 0f && scroll.horizontal))
+            {
+                _navigationObjects.Clear();
+                _navigationRects.Clear();
+                for (int i = 0; i < _objects.Count; i++)
+                    if (ContentScroll(_objects[i].transform, direction) == scroll)
+                    {
+                        _navigationObjects.Add(_objects[i]);
+                        _navigationRects.Add(_rects[i]);
+                    }
+                for (int i = 0; i < _clippedObjects.Count; i++)
+                    if (ContentScroll(_clippedObjects[i].transform, direction) == scroll)
+                    {
+                        _navigationObjects.Add(_clippedObjects[i]);
+                        _navigationRects.Add(_clippedRects[i]);
+                    }
+                int next = UiNavigation.FindNext(_navigationRects, cursor, direction, _config.UiSnap.SnapConeDegrees);
+                if (next >= 0)
+                {
+                    var target = _navigationObjects[next];
+                    if (Reveal(target.transform as RectTransform))
+                    {
+                        _nextScanTime = 0f;
+                        Refresh();
+                    }
+                    int revealed = _objects.IndexOf(target);
+                    destination = cursor;
+                    if (revealed < 0) return false; // Still masked or behind a modal: never click it.
+                    destination = Select(revealed);
+                    return true;
+                }
+            }
             int index = UiNavigation.FindNext(_rects, cursor, direction, _config.UiSnap.SnapConeDegrees);
             destination = cursor;
             if (index < 0) return false;
             destination = Select(index);
             return true;
+        }
+
+        private bool IsScrollClipped(Transform target, Vector2 center, Camera camera)
+        {
+            for (var parent = target.parent; parent != null; parent = parent.parent)
+            {
+                var scroll = parent.GetComponent<ScrollRect>();
+                var viewport = Viewport(scroll);
+                if (viewport != null && scroll.isActiveAndEnabled && scroll.content != null &&
+                    target.IsChildOf(scroll.content) && TryGetScreenRect(viewport, camera, out var rect) &&
+                    !rect.Contains(center)) return true;
+            }
+            return false;
+        }
+
+        private static ScrollRect ContentScroll(Transform target, Vector2 direction)
+        {
+            for (var parent = target.parent; parent != null; parent = parent.parent)
+            {
+                var scroll = parent.GetComponent<ScrollRect>();
+                if (scroll != null && scroll.isActiveAndEnabled && scroll.content != null &&
+                    target.IsChildOf(scroll.content) &&
+                    (direction.y != 0f && scroll.vertical || direction.x != 0f && scroll.horizontal)) return scroll;
+            }
+            return null;
+        }
+
+        private static RectTransform Viewport(ScrollRect scroll)
+            => scroll == null ? null : scroll.viewport != null ? scroll.viewport : scroll.transform as RectTransform;
+
+        private bool Reveal(RectTransform target)
+        {
+            if (target == null) return false;
+            bool moved = false;
+            // Inner viewport first, then any outer scroll panel (quest detail panels
+            // can be nested). Move in viewport space so canvas scale is respected.
+            for (var parent = target.parent; parent != null; parent = parent.parent)
+            {
+                var scroll = parent.GetComponent<ScrollRect>();
+                var viewport = Viewport(scroll);
+                if (viewport == null || !scroll.isActiveAndEnabled || scroll.content == null ||
+                    !target.IsChildOf(scroll.content)) continue;
+                target.GetWorldCorners(_corners);
+                Vector2 min = viewport.InverseTransformPoint(_corners[0]);
+                Vector2 max = min;
+                for (int i = 1; i < 4; i++)
+                {
+                    Vector2 point = viewport.InverseTransformPoint(_corners[i]);
+                    min = Vector2.Min(min, point);
+                    max = Vector2.Max(max, point);
+                }
+                Vector2 offset = UiNavigation.RevealOffset(Rect.MinMaxRect(min.x, min.y, max.x, max.y),
+                    viewport.rect, scroll.horizontal, scroll.vertical);
+                if (offset == Vector2.zero) continue;
+                scroll.StopMovement();
+                scroll.content.position += viewport.TransformVector(new Vector3(offset.x, offset.y, 0f));
+                moved = true;
+                // Raycast masks and layouts must catch up before confirming this slot.
+                Canvas.ForceUpdateCanvases();
+            }
+            return moved;
         }
 
         /// <summary>Which side of a loot view an auto-select request prefers.</summary>
@@ -393,6 +554,7 @@ namespace DuckovPad
             if (go.GetComponent<SlotDisplay>() != null) return true;
             if (go.GetComponent<ItemShortcutEditorEntry>() != null) return true;
             if (go.GetComponent<WeaponButton>() != null) return true;
+            if (go.GetComponent<StockShopItemEntry>() != null) return true;
             return go.GetComponent<ItemDisplay>() != null;
         }
 
@@ -403,6 +565,7 @@ namespace DuckovPad
             if (go.GetComponent<SlotDisplay>() != null) return "equip";
             if (go.GetComponent<ItemShortcutEditorEntry>() != null) return "shortcut";
             if (go.GetComponent<WeaponButton>() != null) return "gun";
+            if (go.GetComponent<StockShopItemEntry>() != null) return "shop";
             if (go.GetComponent<ItemDisplay>() != null) return "item";
             return "other";
         }
