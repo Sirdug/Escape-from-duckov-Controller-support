@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\aaron.aarons-pc\\Documents\\Escape from duckov Controller support\\tests\\NavigationChecks\\NavigationChecks.csproj": {}
+    "C:\\Users\\aaron.aarons-pc\\Documents\\Escape-from-duckov-Controller-support\\tests\\NavigationChecks\\NavigationChecks.csproj": {}
   },
   "projects": {
-    "C:\\Users\\aaron.aarons-pc\\Documents\\Escape from duckov Controller support\\tests\\NavigationChecks\\NavigationChecks.csproj": {
+    "C:\\Users\\aaron.aarons-pc\\Documents\\Escape-from-duckov-Controller-support\\tests\\NavigationChecks\\NavigationChecks.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape from duckov Controller support\\tests\\NavigationChecks\\NavigationChecks.csproj",
+        "projectUniqueName": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape-from-duckov-Controller-support\\tests\\NavigationChecks\\NavigationChecks.csproj",
         "projectName": "NavigationChecks",
-        "projectPath": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape from duckov Controller support\\tests\\NavigationChecks\\NavigationChecks.csproj",
+        "projectPath": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape-from-duckov-Controller-support\\tests\\NavigationChecks\\NavigationChecks.csproj",
         "packagesPath": "C:\\Users\\aaron.aarons-pc\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape from duckov Controller support\\tests\\NavigationChecks\\obj\\",
+        "outputPath": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape-from-duckov-Controller-support\\tests\\NavigationChecks\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

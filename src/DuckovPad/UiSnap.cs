@@ -25,6 +25,8 @@ namespace DuckovPad
         private PointerEventData _pointer;
         private GameObject _selected;
         private GameObject _nativeSelection;
+        private GameObject _pendingReveal;
+        private float _revealDeadline;
         private float _nextScanTime;
         private int _lastScanFrame = -1;
 
@@ -53,6 +55,7 @@ namespace DuckovPad
                 EventSystem.current.currentSelectedGameObject == _nativeSelection)
                 EventSystem.current.SetSelectedGameObject(null);
             _nativeSelection = null;
+            _pendingReveal = null;
             _selected = null;
             HasHover = false;
         }
@@ -99,9 +102,10 @@ namespace DuckovPad
                 // TaskEntry's row click is a cheat-only handler. Its actual Submit
                 // button is scanned independently; focusing the row made A do nothing.
 
-                // Occupied slots have an ItemDisplay child. Use the slot itself so empty
-                // and occupied slots have the same box, and each slot is only one stop.
-                if (component is ItemDisplay)
+                // Slot graphics and nested controls share one navigation stop. Use
+                // the slot box for both empty and occupied entries, not animated children.
+                if (component.GetComponent<InventoryEntry>() == null && component.GetComponent<SlotDisplay>() == null
+                    && component.GetComponent<ItemShortcutEditorEntry>() == null)
                 {
                     for (var parent = component.transform.parent; parent != null; parent = parent.parent)
                     {
@@ -219,6 +223,25 @@ namespace DuckovPad
 
         public bool KeepSelection(Vector2 cursor, out Vector2 destination)
         {
+            if (_pendingReveal != null)
+            {
+                _nextScanTime = 0f;
+                Refresh();
+                int revealed = _objects.IndexOf(_pendingReveal);
+                if (revealed >= 0)
+                {
+                    _pendingReveal = null;
+                    destination = Select(revealed);
+                    return true;
+                }
+                if (_pendingReveal.activeInHierarchy && Time.unscaledTime < _revealDeadline)
+                {
+                    destination = cursor;
+                    HasHover = false;
+                    return false;
+                }
+                _pendingReveal = null;
+            }
             int index = _selected != null ? _objects.IndexOf(_selected) : -1;
             if (index < 0 && DialogueUI.Active)
             {
@@ -237,11 +260,17 @@ namespace DuckovPad
             }
             if (index < 0) index = UiNavigation.FindNearest(_rects, cursor, float.MaxValue);
             destination = cursor;
-            if (index < 0)
+            if (index < 0 || _objects[index] == null || !_objects[index].activeInHierarchy)
             {
                 ClearSelection();
                 return false;
             }
+            // Follow the selected object as layout/scrolling settles, rather than
+            // warping to cached coordinates until the next periodic scan.
+            var canvas = _objects[index].GetComponentInParent<Canvas>();
+            var camera = canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+            if (TryGetScreenRect(_objects[index].transform as RectTransform, camera, out var liveRect))
+                _rects[index] = liveRect;
             destination = Select(index);
             return true;
         }
@@ -250,12 +279,13 @@ namespace DuckovPad
 
         public bool CanActivateSelection()
         {
-            return _selected != null && _selected.activeInHierarchy && IsInteractable(_selected)
+            return _pendingReveal == null && _selected != null && _selected.activeInHierarchy && IsInteractable(_selected)
                 && IsExposed(_selected, HoverRect.center);
         }
 
         public bool TrySnap(Vector2 cursor, Vector2 direction, out Vector2 destination)
         {
+            if (_pendingReveal != null) return KeepSelection(cursor, out destination);
             // Scrolling/layout changes can happen between regular scans. Directional
             // steps must use today's geometry, especially while holding down the stick.
             if (_lastScanFrame != Time.frameCount)
@@ -282,7 +312,8 @@ namespace DuckovPad
                         _navigationObjects.Add(_clippedObjects[i]);
                         _navigationRects.Add(_clippedRects[i]);
                     }
-                int next = UiNavigation.FindNext(_navigationRects, cursor, direction, _config.UiSnap.SnapConeDegrees);
+                int next = UiNavigation.FindNext(_navigationRects, cursor, direction, _config.UiSnap.SnapConeDegrees,
+                    _navigationObjects.IndexOf(_selected));
                 if (next >= 0)
                 {
                     var target = _navigationObjects[next];
@@ -293,12 +324,20 @@ namespace DuckovPad
                     }
                     int revealed = _objects.IndexOf(target);
                     destination = cursor;
-                    if (revealed < 0) return false; // Still masked or behind a modal: never click it.
+                    if (revealed < 0)
+                    {
+                        // Scroll masks may update at end of frame. Retain the intended
+                        // destination so revealing a row does not cost a second press.
+                        _pendingReveal = target;
+                        _revealDeadline = Time.unscaledTime + 0.4f;
+                        HasHover = false;
+                        return false;
+                    }
                     destination = Select(revealed);
                     return true;
                 }
             }
-            int index = UiNavigation.FindNext(_rects, cursor, direction, _config.UiSnap.SnapConeDegrees);
+            int index = UiNavigation.FindNext(_rects, cursor, direction, _config.UiSnap.SnapConeDegrees, current);
             destination = cursor;
             if (index < 0) return false;
             destination = Select(index);

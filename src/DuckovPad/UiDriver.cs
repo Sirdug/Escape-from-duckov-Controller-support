@@ -40,6 +40,7 @@ namespace DuckovPad
         private bool _wasFreeCursor;
         private bool _hidCursor;
         private bool _pointerActive;
+        private bool _dpadFocus;
 
         private Vector2 _cursor;
         private bool _cursorInitialised;
@@ -81,6 +82,7 @@ namespace DuckovPad
             _popupRoot = null;
             _cursorInitialised = false;
             _pointerActive = false;
+            _dpadFocus = false;
             CursorActive = false;
             HidePointer = false;
             if (_hidCursor) UnityEngine.Cursor.visible = true;
@@ -192,13 +194,29 @@ namespace DuckovPad
             float menuDeadzone = Mathf.Max(settings.Deadzone, _config.UiSnap.MenuDeadzone);
             bool dpadOnly = _config.UiSnap.DpadOnly;
             Vector2 stick = dpadOnly ? Vector2.zero : Pad.LeftStick(menuDeadzone, 0.95f, settings.ResponseCurve);
-            if (!ControllerDevice.UsePointer || stick.sqrMagnitude > 0.04f ||
-                Pad.Down(buttons.UiNavUp) || Pad.Down(buttons.UiNavDown) ||
-                Pad.Down(buttons.UiNavLeft) || Pad.Down(buttons.UiNavRight)) _pointerActive = false;
+            Vector2 dpad = Vector2.zero;
+            if (_config.UiSnap.DirectionalSnap)
+            {
+                if (Pad.Held(buttons.UiNavUp)) dpad = Vector2.up;
+                else if (Pad.Held(buttons.UiNavDown)) dpad = Vector2.down;
+                else if (Pad.Held(buttons.UiNavLeft)) dpad = Vector2.left;
+                else if (Pad.Held(buttons.UiNavRight)) dpad = Vector2.right;
+            }
+            bool dpadPressed = Pad.Down(buttons.UiNavUp) || Pad.Down(buttons.UiNavDown)
+                || Pad.Down(buttons.UiNavLeft) || Pad.Down(buttons.UiNavRight);
+            if (!ControllerDevice.UsePointer || stick.sqrMagnitude > 0.04f) _pointerActive = false;
             if (ControllerDevice.UsePointer && pointerDelta.sqrMagnitude > 0.01f) _pointerActive = true;
+            if (_pointerActive || stick.sqrMagnitude > 0.04f) _dpadFocus = false;
+            // Cursor warps can report mouse movement on the next frame. D-pad
+            // input owns this frame, including build menus, and keeps slot focus.
+            if (dpad != Vector2.zero)
+            {
+                _pointerActive = false;
+                _dpadFocus = true;
+            }
             bool precision = Pad.Held(buttons.UiPrecision)
                 && !(ViewUtil.StashOpen && (buttons.UiPrecision == buttons.UiStashPrevious || buttons.UiPrecision == buttons.UiStashNext));
-            bool freeCursor = _pointerActive || precision || builder || !_config.UiSnap.StickNavigation;
+            bool freeCursor = _pointerActive || precision || (builder || !_config.UiSnap.StickNavigation) && !_dpadFocus;
             _snap.Refresh();
             if (_snap.ConsumeAutoSelect(out var autoCursor))
                 _cursor = autoCursor;
@@ -212,16 +230,8 @@ namespace DuckovPad
             if (freeCursor) _cursor += stick * speed * deltaTime + (_pointerActive ? pointerDelta : Vector2.zero);
             else _snap.KeepSelection(_cursor, out _cursor);
 
-            Vector2 dpad = Vector2.zero;
-            if (_config.UiSnap.DirectionalSnap)
-            {
-                if (Pad.Held(buttons.UiNavUp)) dpad = Vector2.up;
-                else if (Pad.Held(buttons.UiNavDown)) dpad = Vector2.down;
-                else if (Pad.Held(buttons.UiNavLeft)) dpad = Vector2.left;
-                else if (Pad.Held(buttons.UiNavRight)) dpad = Vector2.right;
-            }
             Vector2 step = _navigation.ReadStep(freeCursor || dpadOnly ? Vector2.zero : Pad.LeftStickRaw,
-                dpad, Time.unscaledTime, menuDeadzone);
+                dpad, Time.unscaledTime, menuDeadzone, dpadPressed);
             if (!confirmPressed && step != Vector2.zero && !_snap.AdjustSlider(step))
                 _snap.TrySnap(_cursor, step, out _cursor);
             if (freeCursor)

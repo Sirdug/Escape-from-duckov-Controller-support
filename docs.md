@@ -126,10 +126,10 @@ The README provides the default control map for Xbox naming.
 - A: interact
 - B: dash
 - X: reload
-- Y: swap primary / secondary
+- Y: cycle first gun, second gun, melee, starting from the equipped weapon
 - RB: character skill
 - D-pad up/down: ammo / interaction target / weapon scroll equivalent
-- D-pad left/right: cycle weapon slots
+- D-pad left/right: cycle quick-use slots 3–8 during gameplay, wrapping at both ends
 - Start: inventory / stash
 - Select: map
 

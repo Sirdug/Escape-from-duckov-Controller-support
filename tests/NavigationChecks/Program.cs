@@ -33,6 +33,12 @@ internal static class Program
         nav.Reset();
         Check(nav.ReadStep(Vector2.left, Vector2.up, 7f, 0.18f) == Vector2.up, "D-pad wins over conflicting stick input");
         Check(nav.ReadStep(Vector2.zero, Vector2.up, 7.36f, 0.18f) == Vector2.up, "D-pad also supports hold repeat");
+        Check(nav.ReadStep(Vector2.up, Vector2.zero, 7.4f, 0.18f) == Vector2.zero,
+            "Stick in the same direction does not add a step after D-pad release");
+        Check(nav.ReadStep(Vector2.up, Vector2.up, 7.41f, 0.18f, true) == Vector2.up,
+            "A fresh D-pad press advances even when the stick kept the repeat direction held");
+        Check(nav.ReadStep(Vector2.up, Vector2.up, 7.42f, 0.18f) == Vector2.zero,
+            "A fresh press restarts the hold delay and cannot immediately double-step");
 
         var grid = new List<Rect>();
         for (int row = 0; row < 3; row++)
@@ -46,6 +52,9 @@ internal static class Program
             "A free cursor inside a slot navigates from that slot");
         var nested = new[] { new Rect(0, 0, 1000, 800), grid[6] };
         Check(UiNavigation.FindNearest(nested, grid[6].center, 46f) == 1, "A containing panel cannot steal slot hover");
+        var overlapping = new[] { new Rect(0, 0, 80, 80), new Rect(30, 30, 30, 30), new Rect(90, 0, 80, 80) };
+        Check(UiNavigation.FindNext(overlapping, overlapping[0].center, Vector2.left, 65f, 0) == -1,
+            "Navigation starts from explicit focus instead of reidentifying an overlapping control");
         Check(!UiNavigation.IsTargetSize(new Rect(0, 20, 1920, 900), 1920, 1080), "The screenshot backdrop is excluded");
         Check(UiNavigation.IsTargetSize(grid[6], 1920, 1080), "Inventory slots are accepted");
         Check(UiNavigation.FindNearest(grid, new Vector2(1800, 100), 46f) == -1, "Free cursor is not pulled across the screen");

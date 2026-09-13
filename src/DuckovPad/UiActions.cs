@@ -21,6 +21,7 @@ namespace DuckovPad
 
         public void Confirm(GameObject target, Vector2 position)
         {
+            target = ResolveSlot(target);
             if (target == null || !target.activeInHierarchy) return;
             var selected = ItemUIUtilities.SelectedItemDisplay;
             var source = selected != null ? selected.GetComponentInParent<IItemDragSource>() as Component : null;
@@ -45,6 +46,15 @@ namespace DuckovPad
                 return;
             }
             var display = GetDisplay(target);
+            var equipment = target.GetComponent<SlotDisplay>();
+            if (equipment != null && equipment.Editable && display != null && display.Target != null
+                && !display.Target.NeedInspection)
+            {
+                // Some equipment views disable mouse content selection while still
+                // allowing drag-and-drop. A is the controller's grab operation.
+                ItemUIUtilities.Select(selected == display ? null : display);
+                return;
+            }
             if (display != null && target.GetComponent<ItemShortcutEditorEntry>() != null && display.Target != null)
             {
                 ItemUIUtilities.Select(selected == display ? null : display);
@@ -281,6 +291,7 @@ namespace DuckovPad
 
         public void QuickMove(GameObject target)
         {
+            target = ResolveSlot(target);
             if (target == null || EventSystem.current == null) return;
             var data = new PointerEventData(EventSystem.current);
             var entry = target.GetComponent<InventoryEntry>();

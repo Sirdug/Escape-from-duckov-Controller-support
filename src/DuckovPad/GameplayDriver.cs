@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using Dialogues;
 using Duckov.MiniMaps.UI;
 using Duckov.Quests.UI;
@@ -15,9 +14,6 @@ namespace DuckovPad
     /// </summary>
     internal sealed class GameplayDriver
     {
-        private static readonly MethodInfo ShortCutInputMethod =
-            typeof(CharacterInputControl).GetMethod("ShortCutInput", BindingFlags.Instance | BindingFlags.NonPublic);
-
         private readonly PadConfig _config;
         private readonly AimDriver _aim;
         private readonly Rumble _rumble;
@@ -53,8 +49,6 @@ namespace DuckovPad
             _aim = aim;
             _rumble = rumble;
 
-            if (ShortCutInputMethod == null)
-                Log.Warn("CharacterInputControl.ShortCutInput not found — quick-item slots will not work.");
         }
 
         public void Reset()
@@ -274,6 +268,17 @@ namespace DuckovPad
 
         private void CycleItemAgent(InputManager inputManager, int direction)
         {
+            // Inventory, keyboard and mouse-wheel changes can bypass this driver.
+            // Start from the weapon actually held so Y always follows gun 1, gun 2,
+            // melee, even after switching equipment through another input path.
+            var character = CharacterMainControl.Main;
+            var held = character != null ? character.CurrentHoldItemAgent : null;
+            if (held != null && held.Item != null)
+            {
+                if (held.Item == character.PrimWeaponSlot()?.Content) _weaponSlot = 1;
+                else if (held.Item == character.SecWeaponSlot()?.Content) _weaponSlot = 2;
+                else if (held.Item == character.MeleeWeaponSlot()?.Content) _weaponSlot = 3;
+            }
             _weaponSlot += direction;
             if (_weaponSlot > 3) _weaponSlot = 1;
             if (_weaponSlot < 1) _weaponSlot = 3;
@@ -322,10 +327,9 @@ namespace DuckovPad
 
         private static void ShortCut(CharacterInputControl control, int index)
         {
-            if (ShortCutInputMethod == null || control == null) return;
             try
             {
-                ShortCutInputMethod.Invoke(control, new object[] { index });
+                QuickSlotInput.Activate(index);
             }
             catch (Exception e)
             {

@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape from duckov Controller support\\tests\\ControllerChecks\\ControllerChecks.csproj",
+      "projectUniqueName": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape-from-duckov-Controller-support\\tests\\ControllerChecks\\ControllerChecks.csproj",
       "projectName": "ControllerChecks",
-      "projectPath": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape from duckov Controller support\\tests\\ControllerChecks\\ControllerChecks.csproj",
+      "projectPath": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape-from-duckov-Controller-support\\tests\\ControllerChecks\\ControllerChecks.csproj",
       "packagesPath": "C:\\Users\\aaron.aarons-pc\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape from duckov Controller support\\tests\\ControllerChecks\\obj\\",
+      "outputPath": "C:\\Users\\aaron.aarons-pc\\Documents\\Escape-from-duckov-Controller-support\\tests\\ControllerChecks\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

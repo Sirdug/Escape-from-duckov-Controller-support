@@ -15,7 +15,7 @@ namespace DuckovPad
             _nextRepeat = 0f;
         }
 
-        public Vector2 ReadStep(Vector2 stick, Vector2 dpad, float time, float deadzone)
+        public Vector2 ReadStep(Vector2 stick, Vector2 dpad, float time, float deadzone, bool dpadPressed = false)
         {
             Vector2 direction = dpad;
             if (direction == Vector2.zero)
@@ -42,7 +42,7 @@ namespace DuckovPad
                 Reset();
                 return Vector2.zero;
             }
-            if (direction != _heldDirection)
+            if (direction != _heldDirection || (dpadPressed && dpad != Vector2.zero))
             {
                 _heldDirection = direction;
                 _nextRepeat = time + 0.35f;
@@ -104,12 +104,12 @@ namespace DuckovPad
             return best;
         }
 
-        public static int FindNext(IReadOnlyList<Rect> rects, Vector2 cursor, Vector2 direction, float coneDegrees)
+        public static int FindNext(IReadOnlyList<Rect> rects, Vector2 cursor, Vector2 direction, float coneDegrees, int current = -1)
         {
             if (direction.sqrMagnitude < 0.0001f) return -1;
             direction = direction.normalized;
             float cosLimit = Mathf.Cos(coneDegrees * Mathf.Deg2Rad);
-            int current = FindNearest(rects, cursor, 0f);
+            if (current < 0 || current >= rects.Count) current = FindNearest(rects, cursor, 0f);
             if (current >= 0) cursor = rects[current].center;
             float bestScore = float.MaxValue;
             int best = -1;

@@ -1,0 +1,15 @@
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\bin\Release\net10.0\QuickSlotChecks.exe
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\bin\Release\net10.0\QuickSlotChecks.deps.json
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\bin\Release\net10.0\QuickSlotChecks.runtimeconfig.json
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\bin\Release\net10.0\QuickSlotChecks.dll
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\bin\Release\net10.0\QuickSlotChecks.pdb
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\obj\Release\net10.0\QuickSlotChecks.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\obj\Release\net10.0\QuickSlotChecks.AssemblyInfoInputs.cache
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\obj\Release\net10.0\QuickSlotChecks.AssemblyInfo.cs
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\obj\Release\net10.0\QuickSlotChecks.csproj.CoreCompileInputs.cache
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\obj\Release\net10.0\QuickSlotChecks.sourcelink.json
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\obj\Release\net10.0\QuickSlotChecks.dll
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\obj\Release\net10.0\refint\QuickSlotChecks.dll
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\obj\Release\net10.0\QuickSlotChecks.pdb
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\obj\Release\net10.0\QuickSlotChecks.genruntimeconfig.cache
+C:\Users\aaron.aarons-pc\Documents\Escape-from-duckov-Controller-support\tests\QuickSlotChecks\obj\Release\net10.0\ref\QuickSlotChecks.dll
